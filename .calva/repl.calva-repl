@@ -1,0 +1,30 @@
+(when-let [requires (resolve 'clojure.main/repl-requires)] (clojure.core/apply clojure.core/require @requires))
+clj꞉shadow.user꞉> 
+; TIPS: You can choose which REPL to use (clj or cljs):
+;    *Calva: REPL Sessions*
+;    (Click the session indicator in the status bar to open it)
+(require '[cljs.repl :refer [apropos dir doc find-doc print-doc pst source]])
+cljs꞉user꞉> 
+cljs꞉feuerwehr-strichliste.views꞉> 
+(defn about-panel []
+  [:div
+   [:h1 "This is the About Page."]
+
+   [:div
+    [:a {:on-click #(re-frame/dispatch [::events/navigate :home])}
+     "go to Home Page"]]])
+cljs꞉feuerwehr-strichliste.views꞉> 
+(js/alert "Hello from Calva")
+cljs꞉feuerwehr-strichliste.views꞉> 
+Test2
+cljs꞉feuerwehr-strichliste.views꞉> 
+(defn home-panel []
+  (let [name (re-frame/subscribe [::subs/name])]
+    [:div
+     [:h1
+      (str "Hello from " @name ". This is the Home Page. Test2")]
+
+     [:div
+      [:a {:on-click #(re-frame/dispatch [::events/navigate :about])}
+       "go to About Page"]]]))
+cljs꞉feuerwehr-strichliste.views꞉> 
