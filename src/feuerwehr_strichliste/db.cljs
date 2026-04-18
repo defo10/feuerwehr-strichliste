@@ -1,9 +1,8 @@
-(ns feuerwehr-strichliste.db)
+(ns feuerwehr-strichliste.db
+  (:require [feuerwehr-strichliste.schema :as schema]))
 
 (def default-db
-  {:domain {:users {1 {:user/id 1 :user/name "Alex" :user/role :admin :user/active? true}
-                    2 {:user/id 2 :user/name "Maria" :user/role :kitchen :user/active? true}
-                    3 {:user/id 3 :user/name "Tom" :user/role :member :user/active? true}}
+  {:domain {:users     (schema/generate-users 500)
             :event-log []}
    :ui     {:current-user-id nil
             :current-pin     ""}})

@@ -19,6 +19,18 @@
    (->> users-map vals (sort-by :user/name))))
 
 (re-frame/reg-sub
+ ::users-by-letter
+ :<- [::users]
+ (fn [users _]
+   (sort-by first (group-by #(first (:user/name %)) users))))
+
+(re-frame/reg-sub
+ ::used-letters
+ :<- [::users-by-letter]
+ (fn [by-letter _]
+   (set (map first by-letter))))
+
+(re-frame/reg-sub
  ::current-user-id
  (fn [db _]
    (get-in db [:ui :current-user-id])))
