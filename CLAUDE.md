@@ -100,7 +100,7 @@ If it's not in any role's set, anyone can do it. If it is, your role must includ
  :user/name     "Alex"
  :user/role     :member     ;; :member, :kitchen, or :admin
  :user/pin-hash "bcrypt-hashed-pin"
- :user/active?  true}
+ :user/status   :active}    ;; :active, :inactive, or :suspended
 ```
 
 Pins are hashed with bcrypt — not encrypted. No key to manage, no way to recover the pin, only to verify it.
@@ -142,12 +142,19 @@ The ID is the event's position in the log. It's stored inside the event so that 
 
 ### The One Rule
 
-**Re-frame event handlers never write to `[:domain ...]` directly.** All domain mutations flow through the `:persist!` effect. Handlers may freely write to `[:ui ...]`.
+**Every domain mutation must be paired with a `:persist!` effect.** Handlers may freely write to `[:ui ...]`.
+
+Command handlers apply the event to the domain snapshot using `apply-event`, then return both the updated db and the persist effect together — ensuring the two are never decoupled:
+
+```clojure
+{:db       (assoc db :domain domain')
+ :persist! {:event event' :snapshot domain'}}
+```
 
 This separates the app-db into two regions:
 
 ```clojure
-{:domain { ... }    ;; snapshot — only written by :domain/state-updated
+{:domain { ... }    ;; snapshot — materialized view, updated by command handlers
  :ui     { ... }}   ;; modals, loading states, selections — freely written
 ```
 
@@ -158,26 +165,24 @@ This separates the app-db into two regions:
 ```
 User taps a button
     ↓
-re-frame event handler
+re-frame command handler
     ├── validates (permissions, business rules)
-    ├── rejected → {:notify error}
-    └── accepted → {:persist! domain-event}
+    ├── rejected → {:db (assoc-in db [:ui :error] ...)}
+    └── accepted → apply-event(snapshot, event) → {domain', event'}
                         ↓
-               persist! effect handler
-                 1. reducer(snapshot, event) → snapshot'
-                 2. dispatch :domain/state-updated snapshot'  ← sync, UI updates
-                 3. append event to konserve log              ← async
-                 4. persist snapshot' to konserve              ← async
+                   {:db       (assoc db :domain domain')   ← sync, UI updates immediately
+                    :persist! {:event event' :snapshot domain'}}
                         ↓
-               :domain/state-updated
-                 assoc snapshot' into app-db [:domain]
+               persist! effect handler (async)
+                 1. append event' to konserve log
+                 2. persist domain' snapshot to konserve
                         ↓
-               subscriptions on [:domain ...] re-render UI
+               on error → dispatch [:error :errors/persist-failed message]
 ```
 
-Steps 3 and 4 are sequential: event before snapshot. This preserves the invariant that replaying the log reproduces the snapshot.
+Steps 1 and 2 are sequential: event before snapshot. This preserves the invariant that replaying the log reproduces the snapshot.
 
-On a local-only app, storage writes are near-certain to succeed. The worst case — tablet dies mid-write — loses the last action.
+The UI updates synchronously via `:db` before konserve writes complete. On a local-only app, storage writes are near-certain to succeed. The worst case — tablet dies mid-write — loses the last action.
 
 ---
 
@@ -186,54 +191,49 @@ On a local-only app, storage writes are near-certain to succeed. The worst case 
 A command handler:
 
 ```clojure
-(rf/reg-event-fx
-  :command/record-consumption
-  (fn [{:keys [db]} [_ {:keys [user-id item-id quantity]}]]
-    (let [user  (get-in db [:domain :users user-id])
-          price (get-in db [:domain :items item-id :item/price])
-          next-id (count (get-in db [:domain :event-log]))]
-      (if (and (:user/active? user) price)
-        {:persist!
-         {:event/type             :consumption/recorded
-          :event/id               next-id
-          :event/timestamp        (now)
-          :event/actor            user-id
-          :consumption/item-id    item-id
-          :consumption/quantity   quantity
-          :consumption/unit-price price}}
-        {:db (assoc-in db [:ui :error] "Not allowed")}))))
+(re-frame/reg-event-fx
+ :command/record-consumption
+ (fn [{:keys [db]} [_ {:keys [user-id item-id quantity]}]]
+   (let [user  (get-in db [:domain :users user-id])
+         price (get-in db [:domain :items item-id :item/price])]
+     (if (and (= :active (:user/status user)) price)
+       (let [{:keys [domain event]} (reducer/apply-event
+                                     (:domain db)
+                                     {:event/type             :consumption/recorded
+                                      :event/timestamp        (.toISOString (js/Date.))
+                                      :event/actor            user-id
+                                      :consumption/item-id    item-id
+                                      :consumption/quantity   quantity
+                                      :consumption/unit-price price})]
+         {:db       (assoc db :domain domain)
+          :persist! {:event event :snapshot domain}})
+       {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
 ```
 
-The persist effect:
+The persist effect (pure async IO — no db access):
 
 ```clojure
-(rf/reg-fx
-  :persist!
-  (fn [event]
-    (let [snapshot  (:domain @re-frame.db/app-db)
-          snapshot' (reduce-event snapshot event)]
-      ;; sync: update UI
-      (rf/dispatch-sync [:domain/state-updated snapshot'])
-      ;; async: persist, event before snapshot
-      (go
-        (<! (konserve/append store :event-log event))
-        (<! (konserve/assoc-in store [:snapshot] snapshot'))))))
-
-(rf/reg-event-db
-  :domain/state-updated
-  (fn [db [_ snapshot']]
-    (assoc db :domain snapshot')))
+(re-frame/reg-fx
+ :persist!
+ (fn [{:keys [event snapshot]}]
+   (go
+     (try
+       (<! (k/append @storage/store :event-log event))
+       (<! (k/assoc-in @storage/store [:snapshot] snapshot))
+       (catch :default e
+         (re-frame/dispatch [:error :errors/persist-failed (.-message e)])
+         (when config/debug?
+           (js/setTimeout #(throw e) 0)))))))
 ```
 
 ---
 
 ### The Reducer
 
-Pure function. No side effects, no IO.
+Pure function. No side effects, no IO. No `:default` method — unhandled event types throw explicitly.
 
 ```clojure
-(defmulti reduce-event
-  (fn [_snapshot event] (:event/type event)))
+(defmulti reduce-event (fn [_snapshot event] (:event/type event)))
 
 (defmethod reduce-event :consumption/recorded
   [snapshot {:keys [event/actor consumption/item-id
@@ -242,18 +242,30 @@ Pure function. No side effects, no IO.
     (-> snapshot
         (update-in [:balances actor] - cost)
         (update-in [:items item-id :item/stock] - quantity))))
-
-(defmethod reduce-event :balance/topped-up
-  [snapshot {:keys [event/actor top-up/amount]}]
-  (update-in snapshot [:balances actor] + amount))
-
-(defmethod reduce-event :transaction/voided
-  [snapshot {:keys [void/original-event]}]
-  (let [original (get-in snapshot [:event-log-index void/original-event])]
-    (reverse-event snapshot original)))
 ```
 
-Because it's pure, testing is trivial: pass a snapshot and an event, assert the output.
+`apply-event` wraps `reduce-event` — it assigns the sequential ID and increments the counter:
+
+```clojure
+(defn apply-event [domain event]
+  (let [id      (:next-event-id domain)
+        event'  (assoc event :event/id id)
+        domain' (-> (reduce-event domain event')
+                    (update :next-event-id inc))]
+    {:domain domain' :event event'}))
+```
+
+Command handlers call `apply-event`, never `reduce-event` directly. Because it's pure, testing is trivial: pass a snapshot and an event, assert the output.
+
+The snapshot shape:
+
+```clojure
+{:users         {}   ;; map of id → user
+ :balances      {}   ;; map of user-id → amount
+ :next-event-id 0}   ;; used by apply-event for sequential IDs
+```
+
+The event log lives in konserve only — not in the snapshot.
 
 ---
 
@@ -261,17 +273,29 @@ Because it's pure, testing is trivial: pass a snapshot and an event, assert the 
 
 Konserve stores two things:
 
-1. **Event log** — ordered list of all domain events, append-only
-2. **Snapshot** — current materialized state (a cache)
+1. **Event log** — ordered list of all domain events, append-only (`k/append store :event-log event`)
+2. **Snapshot** — current materialized state, a cache (`k/assoc-in store [:snapshot] snapshot`)
 
-If the snapshot is lost or corrupted:
+The backend is selected at startup based on `config/debug?`:
+- **Dev**: in-memory store (reset on reload, no setup required)
+- **Prod**: IndexedDB (persists across reloads)
+
+```clojure
+(defn init! [on-ready]
+  (if config/debug?
+    (do (reset! store (k/create-store mem-config {:sync? true}))
+        (on-ready))
+    (go
+      (reset! store (<! (k/create-store idb-config {:sync? false})))
+      (on-ready))))
+```
+
+If the snapshot is lost or corrupted, rebuild by replaying the log:
 
 ```clojure
 (defn rebuild-snapshot [event-log]
-  (reduce reduce-event {} event-log))
+  (reduce #(:domain (reducer/apply-event %1 %2)) reducer/empty-snapshot event-log))
 ```
-
-Persistence frequency is a tuning knob. Start with persisting after every event. Batch later if needed.
 
 ---
 
