@@ -40,6 +40,11 @@
    (set (map first by-letter))))
 
 (re-frame/reg-sub
+ ::error
+ (fn [db _]
+   (get-in db [:ui :error])))
+
+(re-frame/reg-sub
  ::current-user-id
  (fn [db _]
    (get-in db [:ui :current-user-id])))

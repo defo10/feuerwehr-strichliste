@@ -2,8 +2,11 @@
   (:require
    [re-frame.core :as re-frame]
    [feuerwehr-strichliste.db :as db]
-   [day8.re-frame.tracing :refer-macros [fn-traced]]
-   ))
+   [feuerwehr-strichliste.storage :as storage]
+   [konserve.core :as k]
+   [cljs.core.async :refer [go <!]]
+   [feuerwehr-strichliste.config :as config]
+   [day8.re-frame.tracing :refer-macros [fn-traced]]))
 
 (re-frame/reg-event-db
  ::initialize-db
@@ -24,3 +27,27 @@
  ::set-search-query
  (fn-traced [db [_ query]]
    (assoc-in db [:ui :search-query] query)))
+
+(re-frame/reg-event-db
+ :error
+ (fn-traced [db [_ type message]]
+   (assoc-in db [:ui :error] {:type type :message message})))
+
+(re-frame/reg-event-db
+ :error/dismiss
+ (fn-traced [db _]
+   (assoc-in db [:ui :error] nil)))
+
+(re-frame/reg-fx
+ :persist!
+ (fn [{:keys [event snapshot]}]
+   (go
+     (try
+       (<! (k/append @storage/store :event-log event))
+       (<! (k/assoc-in @storage/store [:snapshot] snapshot))
+       (catch :default e
+         (re-frame/dispatch [:error :errors/persist-failed (.-message e)])
+         ;; go blocks swallow exceptions — setTimeout re-throws outside core.async's
+         ;; try/catch so the error reaches the global handler and is visible in dev tools
+         (when config/debug?
+           (js/setTimeout #(throw e) 0)))))))

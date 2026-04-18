@@ -21,7 +21,7 @@
    [:user/name     [:string {:gen/gen (gen/elements german-names)}]]
    [:user/role     [:enum :member :kitchen :admin]]
    [:user/pin-hash [:string {:min 1}]]
-   [:user/active?  boolean?]])
+   [:user/status   [:enum :active :inactive :suspended]]])
 
 (defn generate-users [n]
   (into {}

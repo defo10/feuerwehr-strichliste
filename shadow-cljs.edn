@@ -13,6 +13,9 @@
   [garden "1.3.10"]
   [metosin/malli "0.16.4"]
   [org.clojure/test.check "1.1.1"]
+  [io.replikativ/konserve "0.7.274"]
+  [io.replikativ/konserve-indexeddb "0.1.0"]
+  [org.clojure/core.async "1.6.681"]
 
   [binaryage/devtools "1.0.6"]
   [day8.re-frame/re-frame-10x "1.9.3"]]

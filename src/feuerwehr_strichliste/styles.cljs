@@ -73,6 +73,57 @@
     [:&:hover  {:background "var(--color-surface-hover)"}]
     [:&:active {:background "var(--color-surface-active)"}]]
 
+   [:.error-overlay
+    {:position        "fixed"
+     :inset           0
+     :background      "rgba(0,0,0,0.5)"
+     :display         "flex"
+     :align-items     "center"
+     :justify-content "center"
+     :z-index         100}]
+
+   [:.error-dialog
+    {:background    "var(--color-surface)"
+     :border-radius "var(--radius)"
+     :padding       "2rem"
+     :max-width      "400px"
+     :width          "90%"
+     :box-shadow    "var(--shadow-hover)"}]
+
+   [:.error-title
+    {:font-size     "1.25rem"
+     :font-weight   700
+     :margin-bottom "0.5rem"
+     :color         "var(--color-primary)"}]
+
+   [:.error-message
+    {:color         "var(--color-on-surface)"
+     :margin-bottom "1.5rem"}]
+
+   [:.error-actions
+    {:display         "flex"
+     :gap             "0.75rem"
+     :justify-content "flex-end"}]
+
+   [:.error-reload
+    {:background    "var(--color-primary)"
+     :color         "var(--color-on-primary)"
+     :border        "none"
+     :border-radius "var(--radius)"
+     :padding       "0.6rem 1.25rem"
+     :font-size     "1rem"
+     :font-weight   600
+     :cursor        "pointer"}]
+
+   [:.error-dismiss
+    {:background    "transparent"
+     :color         "var(--color-on-surface)"
+     :border        "1px solid var(--color-outline)"
+     :border-radius "var(--radius)"
+     :padding       "0.6rem 1.25rem"
+     :font-size     "1rem"
+     :cursor        "pointer"}]
+
    [:.alphabet-bar
     {:position       "fixed"
      :right          0

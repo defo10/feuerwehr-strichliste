@@ -6,7 +6,9 @@
    [feuerwehr-strichliste.routes :as routes]
    [feuerwehr-strichliste.views :as views]
    [feuerwehr-strichliste.config :as config]
-   [feuerwehr-strichliste.styles :as styles]))
+   [feuerwehr-strichliste.styles :as styles]
+   [feuerwehr-strichliste.storage :as storage]
+   [feuerwehr-strichliste.domain.commands]))
 
 
 (defn dev-setup []
@@ -22,6 +24,8 @@
 
 (defn init []
   (routes/start!)
-  (re-frame/dispatch-sync [::events/initialize-db])
   (dev-setup)
-  (mount-root))
+  (storage/init!
+   (fn []
+     (re-frame/dispatch-sync [::events/initialize-db])
+     (mount-root))))
