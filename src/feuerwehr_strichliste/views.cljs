@@ -3,22 +3,10 @@
    [re-frame.core :as re-frame]
    [feuerwehr-strichliste.events :as events]
    [feuerwehr-strichliste.routes :as routes]
-   [feuerwehr-strichliste.subs :as subs]))
+   [feuerwehr-strichliste.subs :as subs]
+   [feuerwehr-strichliste.pages.home :refer [home-page]]))
 
-
-;; home
-
-(defn home-panel []
-  (let [name (re-frame/subscribe [::subs/name])]
-    [:div
-     [:h1
-      (str "Hello from " @name ". This is the Home Page. Test2")]
-
-     [:div
-      [:a {:on-click #(re-frame/dispatch [::events/navigate :about])}
-       "go to About Page"]]]))
-
-(defmethod routes/panels :home-panel [] [home-panel])
+(defmethod routes/panels :home-panel [] [home-page])
 
 ;; about
 

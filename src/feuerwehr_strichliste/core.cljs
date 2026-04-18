@@ -6,7 +6,7 @@
    [feuerwehr-strichliste.routes :as routes]
    [feuerwehr-strichliste.views :as views]
    [feuerwehr-strichliste.config :as config]
-   ))
+   [feuerwehr-strichliste.styles :as styles]))
 
 
 (defn dev-setup []
@@ -14,6 +14,7 @@
     (println "dev mode")))
 
 (defn ^:dev/after-load mount-root []
+  (styles/inject!)
   (re-frame/clear-subscription-cache!)
   (let [root-el (.getElementById js/document "app")]
     (rdom/unmount-component-at-node root-el)
