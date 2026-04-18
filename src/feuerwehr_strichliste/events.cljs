@@ -19,3 +19,8 @@
  ::set-active-panel
  (fn-traced [{:keys [db]} [_ active-panel]]
    {:db (assoc db :active-panel active-panel)}))
+
+(re-frame/reg-event-db
+ ::set-search-query
+ (fn-traced [db [_ query]]
+   (assoc-in db [:ui :search-query] query)))

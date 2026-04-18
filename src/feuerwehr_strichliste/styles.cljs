@@ -31,10 +31,28 @@
    [:.page
     {:padding "2rem 3.75rem 2rem 2rem"}]
 
+   [:.page-header
+    {:display        "flex"
+     :align-items    "center"
+     :justify-content "space-between"
+     :margin-bottom  (rem 1.5)
+     :gap            (rem 1)}]
+
    [:.page-title
-    {:font-size     (rem 2)
-     :font-weight   700
-     :margin-bottom (rem 1.5)}]
+    {:font-size   (rem 2)
+     :font-weight 700}]
+
+   [:.search-bar
+    {:font-size     (rem 1)
+     :padding       "0.5rem 0.75rem"
+     :border        "1px solid var(--color-outline)"
+     :border-radius "var(--radius)"
+     :background    "var(--color-surface)"
+     :color         "var(--color-on-surface)"
+     :outline       "none"
+     :width         (px 200)
+     :transition    "border-color 0.15s, width 0.2s ease"}
+    [:&:focus {:border-color "var(--color-primary)" :width (px 260)}]]
 
    [:.user-list
     {:background    "var(--color-surface)"

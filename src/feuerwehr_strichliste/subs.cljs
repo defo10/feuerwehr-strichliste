@@ -13,10 +13,19 @@
    (get-in db [:domain :users])))
 
 (re-frame/reg-sub
+ ::search-query
+ (fn [db _]
+   (get-in db [:ui :search-query])))
+
+(re-frame/reg-sub
  ::users
  :<- [::users-map]
- (fn [users-map _]
-   (->> users-map vals (sort-by :user/name))))
+ :<- [::search-query]
+ (fn [[users-map query] _]
+   (let [q (clojure.string/lower-case (or query ""))
+         matches? #(clojure.string/includes?
+                    (clojure.string/lower-case (:user/name %)) q)]
+     (->> users-map vals (filter matches?) (sort-by :user/name)))))
 
 (re-frame/reg-sub
  ::users-by-letter

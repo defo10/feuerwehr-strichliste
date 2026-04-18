@@ -5,4 +5,5 @@
   {:domain {:users     (schema/generate-users 500)
             :event-log []}
    :ui     {:current-user-id nil
-            :current-pin     ""}})
+            :current-pin     ""
+            :search-query    ""}})
