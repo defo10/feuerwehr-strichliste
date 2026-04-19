@@ -157,6 +157,37 @@
     {:font-weight 600
      :font-size   (rem 1.1)}]
 
+   [:.action-bar
+    {:display    "flex"
+     :gap        (rem 0.75)
+     :padding    "1rem 1.5rem"
+     :overflow-x "auto"}]
+
+   [:.action-button
+    {:display        "flex"
+     :flex-direction "column"
+     :align-items    "flex-start"
+     :justify-content "space-between"
+     :width          (px 140)
+     :height         (px 140)
+     :border         "none"
+     :border-radius  "var(--radius)"
+     :cursor         "pointer"
+     :padding        "1rem"
+     :flex-shrink    0
+     :transition     "opacity 0.1s"}
+    [:&:hover {:opacity 0.85}]]
+
+   [:.action-icon
+    {:font-size (rem 2)}]
+
+   [:.action-title
+    {:font-size   (rem 0.9)
+     :font-weight 600
+     :text-align  "left"
+     :color       "#ffffff"
+     :line-height 1.3}]
+
    [:.top-nav-logout
     {:background  "none"
      :border      "none"
