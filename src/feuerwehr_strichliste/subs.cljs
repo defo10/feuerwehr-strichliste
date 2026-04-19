@@ -50,6 +50,11 @@
    (get-in db [:ui :current-user-id])))
 
 (re-frame/reg-sub
+ ::pin-state
+ (fn [db _]
+   (get-in db [:ui :pin])))
+
+(re-frame/reg-sub
  ::current-user
  :<- [::users-map]
  :<- [::current-user-id]

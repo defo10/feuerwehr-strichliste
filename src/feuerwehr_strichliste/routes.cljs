@@ -30,8 +30,8 @@
   (pushy/pushy dispatch parse))
 
 (defn navigate!
-  [handler]
-  (pushy/set-token! history (url-for handler)))
+  [& args]
+  (pushy/set-token! history (apply url-for args)))
 
 (defn start!
   []
@@ -39,5 +39,7 @@
 
 (re-frame/reg-fx
  :navigate
- (fn [handler]
-   (navigate! handler)))
+ (fn [args]
+   (if (sequential? args)
+     (apply navigate! args)
+     (navigate! args))))

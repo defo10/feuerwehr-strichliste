@@ -16,6 +16,14 @@
              :user/pin-hash pin-hash
              :user/status   :active}))
 
+(defmethod reduce-event :auth/sign-in-attempted
+  [snapshot _event]
+  snapshot)
+
+(defmethod reduce-event :auth/sign-in-attempted
+  [snapshot _event]
+  snapshot)
+
 (defn apply-event [domain event]
   (let [id      (:next-event-id domain)
         event'  (assoc event :event/id id)

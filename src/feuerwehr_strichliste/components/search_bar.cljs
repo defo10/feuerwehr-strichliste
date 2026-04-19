@@ -7,6 +7,6 @@
   (let [query (re-frame/subscribe [::subs/search-query])]
     [:input.search-bar
      {:type        "search"
-      :placeholder "Suchen..."
+      :placeholder "Filtern..."
       :value       @query
       :on-change   #(re-frame/dispatch [::events/set-search-query (.. % -target -value)])}]))

@@ -1,12 +1,29 @@
 (ns feuerwehr-strichliste.styles
   (:require [garden.core :refer [css]]
+            [garden.stylesheet :refer [at-keyframes]]
             [garden.units :refer [rem px]]))
 
 (comment
   (println (garden.core/css rules)))
 
 (def ^:private rules
-  [[":root"
+  [(at-keyframes "shake"
+     [:from  {:transform "rotate(0deg)"}]
+     ["20%"  {:transform "rotate(-6deg)"}]
+     ["40%"  {:transform "rotate(6deg)"}]
+     ["60%"  {:transform "rotate(-4deg)"}]
+     ["80%"  {:transform "rotate(4deg)"}]
+     [:to    {:transform "rotate(0deg)"}])
+
+   (at-keyframes "overlay-in"
+     [:from {:backdrop-filter "blur(0px)" :background "rgba(0,0,0,0)"}]
+     [:to   {:backdrop-filter "blur(6px)" :background "rgba(0,0,0,0.4)"}])
+
+   (at-keyframes "modal-in"
+     [:from {:opacity 0 :transform "scale(0.95) translateY(8px)"}]
+     [:to   {:opacity 1 :transform "scale(1) translateY(0)"}])
+
+   [":root"
     {"--color-primary"          "#cc2936"
      "--color-on-primary"       "#ffffff"
      "--color-background"       "#f0f2f5"
@@ -123,6 +140,91 @@
      :padding       "0.6rem 1.25rem"
      :font-size     "1rem"
      :cursor        "pointer"}]
+
+   [:.pin-modal-overlay
+    {:position        "fixed"
+     :inset           0
+     :background      "rgba(0,0,0,0.4)"
+     :backdrop-filter "blur(6px)"
+     :display         "flex"
+     :align-items     "center"
+     :justify-content "center"
+     :z-index         100
+     :animation       "overlay-in 0.2s ease forwards"}]
+
+   [:.pin-modal
+    {:background     "var(--color-surface)"
+     :border-radius  "var(--radius)"
+     :padding        0
+     :width          (px 320)
+     :display        "flex"
+     :flex-direction "column"
+     :align-items    "center"
+     :gap            (rem 1.5)
+     :box-shadow     "var(--shadow-hover)"
+     :animation      "modal-in 0.2s ease forwards"}]
+
+   [:.pin-modal-title
+    {:font-size   (rem 1.5)
+     :font-weight 700
+     :padding     "0 2rem"}]
+
+   [:.pin-modal-close
+    {:align-self  "flex-end"
+     :background  "none"
+     :border      "none"
+     :cursor      "pointer"
+     :color       "var(--color-on-surface-muted)"
+     :font-size   (rem 2)
+     :line-height 1
+     :padding     "0.75rem"
+     :transition  "color 0.1s"}
+    [:&:hover {:color "var(--color-on-surface)"}]]
+
+   [:.pin-dots
+    {:display "flex"
+     :gap     (rem 1)
+     :padding "0 2rem"}
+    [:&.shaking {:animation "shake 0.4s ease"}]]
+
+   [:.pin-dot
+    {:width         (px 22)
+     :height        (px 22)
+     :border-radius "50%"
+     :border        "2px solid var(--color-outline)"
+     :background    "transparent"
+     :transition    "background 0.1s"}
+    [:&.filled {:background   "var(--color-on-surface)"
+                :border-color "var(--color-on-surface)"}]]
+
+   [:.pin-keypad
+    {:display               "grid"
+     :grid-template-columns "repeat(3, 1fr)"
+     :gap                   (rem 0.75)
+     :width                 "100%"
+     :padding               "0 2rem 2rem"}]
+
+   [:.pin-key
+    {:font-size     (rem 1.75)
+     :font-weight   600
+     :padding       "1rem"
+     :border        "1px solid var(--color-outline)"
+     :border-radius "var(--radius)"
+     :background    "var(--color-surface)"
+     :cursor        "pointer"
+     :transition    "background 0.1s"}
+    [:&:hover  {:background "var(--color-surface-hover)"}]
+    [:&:active {:background "var(--color-surface-active)"}]]
+
+   [:.pin-error
+    {:color       "var(--color-primary)"
+     :font-weight 600
+     :padding     "0 2rem"}]
+
+   [:.pin-success
+    {:color       "green"
+     :font-weight 600
+     :padding     "0 2rem"}]
 
    [:.alphabet-bar
     {:position       "fixed"

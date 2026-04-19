@@ -11,8 +11,15 @@
           :user/pin-hash   (:user/pin-hash user)})
        (vals (schema/generate-users 20))))
 
+;; To generate bcrypt hashes for seed PINs, connect to nREPL and run:
+;;   (shadow.cljs.devtools.api/nrepl-select :app)
+;;   (require '["bcryptjs" :as bcrypt])
+;;   (.hashSync bcrypt "1234" 10)
+;;   (.hashSync bcrypt "0000" 10)
+;;   (.hashSync bcrypt "1111" 10)
+
 (def default-db
   {:domain (reduce #(:domain (reducer/apply-event %1 %2)) reducer/empty-snapshot (seed-events))
    :ui     {:current-user-id nil
-            :current-pin     ""
+            :pin             {:user nil :digits "" :error nil :success false}
             :search-query    ""}})

@@ -1,7 +1,12 @@
 (ns feuerwehr-strichliste.schema
-  (:require [malli.core :as m]
-            [malli.generator :as mg]
-            [clojure.test.check.generators :as gen]))
+  (:require
+   ["bcryptjs" :as bcrypt]
+   [clojure.test.check.generators :as gen]
+   [malli.generator :as mg]))
+
+
+(comment
+  (.hashSync bcrypt "1234" 10))
 
 (def ^:private german-names
   ["Alexander Bauer" "Maria Hoffmann" "Thomas Fischer" "Lena Wagner"
@@ -20,7 +25,7 @@
    [:user/id       pos-int?]
    [:user/name     [:string {:gen/gen (gen/elements german-names)}]]
    [:user/role     [:enum :member :kitchen :admin]]
-   [:user/pin-hash [:string {:min 1}]]
+   [:user/pin-hash [:string {:gen/gen (gen/return "$2b$10$fSviXQEHvZ/dHtwvKUREbOFZcc9Recla6YM4vFMmgbLb9hyNLpij.")}]]
    [:user/status   [:enum :active :inactive :suspended]]])
 
 (defn generate-users [n]

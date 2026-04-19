@@ -3,9 +3,11 @@
    [re-frame.core :as re-frame]
    [feuerwehr-strichliste.db :as db]
    [feuerwehr-strichliste.storage :as storage]
+   [feuerwehr-strichliste.domain.reducer :as reducer]
    [konserve.core :as k]
    [cljs.core.async :refer [go <!]]
    [feuerwehr-strichliste.config :as config]
+   ["bcryptjs" :as bcrypt]
    [day8.re-frame.tracing :refer-macros [fn-traced]]))
 
 (re-frame/reg-event-db
@@ -37,6 +39,49 @@
  :error/dismiss
  (fn-traced [db _]
    (assoc-in db [:ui :error] nil)))
+
+(re-frame/reg-event-db
+ ::open-pin-modal
+ (fn-traced [db [_ user]]
+   (assoc-in db [:ui :pin] {:user user :digits "" :error nil :success false})))
+
+(re-frame/reg-event-db
+ ::close-pin-modal
+ (fn-traced [db _]
+   (assoc-in db [:ui :pin :user] nil)))
+
+(re-frame/reg-event-fx
+ ::pin-digit
+ (fn-traced [{:keys [db]} [_ digit]]
+   (let [current   (get-in db [:ui :pin :digits])
+         new-pin   (if (< (count current) 4) (str current digit) current)
+         complete? (= 4 (count new-pin))
+         db'       (-> db
+                       (assoc-in [:ui :pin :digits] new-pin)
+                       (assoc-in [:ui :pin :error] nil))]
+     (if-not complete?
+       {:db db'}
+       (let [user                   (get-in db [:ui :pin :user])
+             valid?                 (bcrypt/compareSync new-pin (:user/pin-hash user))
+             {:keys [domain event]} (reducer/apply-event
+                                     (:domain db)
+                                     {:event/type      :auth/sign-in-attempted
+                                      :event/timestamp (.toISOString (js/Date.))
+                                      :event/actor     (:user/id user)
+                                      :auth/success    valid?})]
+         {:db       (-> db'
+                        (assoc :domain domain)
+                        (cond-> valid?       (-> (assoc-in [:ui :pin :success] true)
+                                                 (assoc-in [:ui :current-user-id] (:user/id user))))
+                        (cond-> (not valid?) (-> (assoc-in [:ui :pin :digits] "")
+                                                 (assoc-in [:ui :pin :error] "Falsche PIN"))))
+          :persist! {:event event :snapshot domain}})))))
+
+(re-frame/reg-event-db
+ ::pin-backspace
+ (fn-traced [db _]
+   (update-in db [:ui :pin :digits]
+              #(subs % 0 (max 0 (dec (count %)))))))
 
 (re-frame/reg-fx
  :persist!

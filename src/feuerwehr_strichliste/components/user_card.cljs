@@ -1,4 +1,8 @@
-(ns feuerwehr-strichliste.components.user-card)
+(ns feuerwehr-strichliste.components.user-card
+  (:require [re-frame.core :as re-frame]
+            [feuerwehr-strichliste.events :as events]))
 
-(defn user-card [{:user/keys [name]}]
-  [:div.user-list-item name])
+(defn user-card [user]
+  [:div.user-list-item
+   {:on-click #(re-frame/dispatch [::events/open-pin-modal user])}
+   (:user/name user)])
