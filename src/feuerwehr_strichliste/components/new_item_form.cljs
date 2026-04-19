@@ -5,15 +5,12 @@
 (defn- format-cents [cents]
   (str (quot cents 100) "," (let [r (mod cents 100)] (if (< r 10) (str "0" r) r))))
 
-(defn- valid? [{:keys [name price-cents stock]}]
+(defn- valid? [{:keys [name price-cents]}]
   (and (not (str/blank? name))
-       (pos? price-cents)
-       (not (str/blank? stock))
-       (let [n (js/parseInt stock)]
-         (and (not (js/isNaN n)) (>= n 0)))))
+       (pos? price-cents)))
 
 (defn new-item-form [_on-close]
-  (let [form (r/atom {:type "food" :name "" :price-cents 0 :stock "0"})]
+  (let [form (r/atom {:type "food" :name "" :price-cents 0 :stock 0})]
     (fn [on-close]
       (let [f @form]
         [:form.drawer-form {:on-submit #(.preventDefault %)}
@@ -68,11 +65,23 @@
 
          [:div.form-field
           [:label "Vorrat"]
-          [:input {:type      "number"
-                   :min       "0"
-                   :step      "1"
-                   :value     (:stock f)
-                   :on-change #(swap! form assoc :stock (.. % -target -value))}]]
+          [:input.price-input
+           {:type            "text"
+            :input-mode      "numeric"
+            :value           (str (:stock f))
+            :on-change       identity
+            :on-before-input (fn [e]
+                               (.preventDefault e)
+                               (when-let [d (.-data e)]
+                                 (when (re-matches #"\d" d)
+                                   (swap! form update :stock
+                                          (fn [s]
+                                            (let [n (+ (* s 10) (js/parseInt d))]
+                                              (if (< n 100000) n s)))))))
+            :on-key-down     (fn [e]
+                               (when (= "Backspace" (.-key e))
+                                 (.preventDefault e)
+                                 (swap! form update :stock #(quot % 10))))}]]
 
          [:div.form-actions
           [:button.form-submit
