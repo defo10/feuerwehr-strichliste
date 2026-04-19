@@ -141,6 +141,160 @@
      :font-size     "1rem"
      :cursor        "pointer"}]
 
+   [:.drawer-overlay
+    {:position       "fixed"
+     :inset          0
+     :background     "rgba(0,0,0,0)"
+     :z-index        200
+     :pointer-events "none"
+     :transition     "background 0.3s ease, backdrop-filter 0.3s ease"}
+    [:&.open {:background      "rgba(0,0,0,0.4)"
+              :backdrop-filter "blur(4px)"
+              :pointer-events  "all"}]]
+
+   [:.drawer
+    {:position       "fixed"
+     :top            0
+     :right          0
+     :height         "100vh"
+     :width          (px 420)
+     :max-width      "90vw"
+     :background     "var(--color-surface)"
+     :box-shadow     "-4px 0 24px rgba(0,0,0,0.12)"
+     :display        "flex"
+     :flex-direction "column"
+     :transform      "translateX(100%)"
+     :transition     "transform 0.3s ease"
+     :overflow       "hidden"}
+    [:&.open {:transform "translateX(0)"}]]
+
+   [:.drawer-header
+    {:display         "flex"
+     :align-items     "center"
+     :justify-content "space-between"
+     :padding         "1.25rem 1.5rem"
+     :border-bottom   "1px solid var(--color-outline)"
+     :flex-shrink     0}]
+
+   [:.drawer-title
+    {:font-size   (rem 1.25)
+     :font-weight 700}]
+
+   [:.drawer-close
+    {:background  "none"
+     :border      "none"
+     :font-size   (rem 1.75)
+     :line-height 1
+     :cursor      "pointer"
+     :color       "var(--color-on-surface-muted)"
+     :padding     "0.25rem"
+     :transition  "color 0.1s"}
+    [:&:hover {:color "var(--color-on-surface)"}]]
+
+   [:.drawer-body
+    {:flex       1
+     :overflow-y "auto"}]
+
+   [:.drawer-form
+    {:display        "flex"
+     :flex-direction "column"
+     :gap            (rem 1.5)
+     :padding        "1.5rem"}]
+
+   [:.form-field
+    {:display        "flex"
+     :flex-direction "column"
+     :gap            "0.375rem"}
+    [:label {:font-size   (rem 0.875)
+             :font-weight 600}]
+    [:input :select
+     {:padding       "0.625rem 0.75rem"
+      :border        "1px solid var(--color-outline)"
+      :border-radius "var(--radius)"
+      :font-size     (rem 1)
+      :color         "var(--color-on-surface)"
+      :background    "var(--color-surface)"
+      :outline       "none"
+      :width         "100%"}
+     [:&:focus {:border-color "var(--color-primary)"}]]]
+
+   [:.optional-hint
+    {:color       "var(--color-on-surface-muted)"
+     :font-weight 400
+     :font-size   (rem 0.8)}]
+
+   [:.optional-input
+    {:border-style "dashed !important"
+     :color        "var(--color-on-surface-muted)"}]
+
+   [:.type-picker
+    {:display       "flex"
+     :border        "1px solid var(--color-outline)"
+     :border-radius "var(--radius)"
+     :overflow      "hidden"}]
+
+   [:.type-option
+    {:flex            1
+     :display         "flex"
+     :align-items     "center"
+     :justify-content "center"
+     :padding         "0.625rem"
+     :font-size       (rem 1)
+     :font-weight     500
+     :cursor          "pointer"
+     :transition      "background 0.15s, color 0.15s"
+     :user-select     "none"}
+    [:& + :& {:border-left "1px solid var(--color-outline)"}]
+    [:&.selected {:background "var(--color-primary)"
+                  :color      "var(--color-on-primary)"
+                  :font-weight 600}]
+    [:input {:display "none"}]]
+
+   [:.price-wrapper
+    {:display       "flex"
+     :align-items   "stretch"
+     :border        "1px solid var(--color-outline)"
+     :border-radius "var(--radius)"
+     :overflow      "hidden"}
+    [:&:focus-within {:border-color "var(--color-primary)"}]]
+
+   [:.price-currency
+    {:padding     "0.625rem 0.75rem"
+     :color       "var(--color-on-surface-muted)"
+     :font-weight 600
+     :display     "flex"
+     :align-items "center"}]
+
+   [:.price-input
+    {:flex                 1
+     :padding              "0.625rem 0.75rem"
+     :border               "none"
+     :outline              "none"
+     :text-align           "right"
+     :font-size            (rem 1)
+     :font-weight          600
+     :font-variant-numeric "tabular-nums"
+     :caret-color          "transparent"
+     :background           "transparent"
+     :width                "100%"}]
+
+   [:.form-actions
+    {:padding-top (rem 0.5)}]
+
+   [:.form-submit
+    {:width         "100%"
+     :padding       "0.75rem"
+     :background    "var(--color-primary)"
+     :color         "var(--color-on-primary)"
+     :border        "none"
+     :border-radius "var(--radius)"
+     :font-size     (rem 1)
+     :font-weight   600
+     :cursor        "pointer"
+     :transition    "opacity 0.1s"}
+    ["&:hover:not(:disabled)" {:opacity 0.9}]
+    [:&:disabled {:opacity 0.4 :cursor "not-allowed"}]]
+
    [:.top-nav
     {:position        "sticky"
      :top             0
