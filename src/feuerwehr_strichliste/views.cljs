@@ -5,6 +5,7 @@
    [feuerwehr-strichliste.routes :as routes]
    [feuerwehr-strichliste.subs :as subs]
    [feuerwehr-strichliste.pages.home :refer [home-page]]
+   [feuerwehr-strichliste.pages.overview :refer [overview-page]]
    [feuerwehr-strichliste.components.error-overlay :refer [error-overlay]]))
 
 (defmethod routes/panels :home-panel [] [home-page])
@@ -20,6 +21,8 @@
      "go to Home Page"]]])
 
 (defmethod routes/panels :about-panel [] [about-panel])
+
+(defmethod routes/panels :overview-panel [] [overview-page])
 
 ;; main
 

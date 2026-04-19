@@ -69,13 +69,32 @@
                                       :event/timestamp (.toISOString (js/Date.))
                                       :event/actor     (:user/id user)
                                       :auth/success    valid?})]
-         {:db       (-> db'
-                        (assoc :domain domain)
-                        (cond-> valid?       (-> (assoc-in [:ui :pin :success] true)
-                                                 (assoc-in [:ui :current-user-id] (:user/id user))))
-                        (cond-> (not valid?) (-> (assoc-in [:ui :pin :digits] "")
-                                                 (assoc-in [:ui :pin :error] "Falsche PIN"))))
-          :persist! {:event event :snapshot domain}})))))
+         (if valid?
+           {:db       (-> db'
+                          (assoc :domain domain)
+                          (assoc-in [:ui :current-user-id] (:user/id user)))
+            :persist! {:event event :snapshot domain}
+            :navigate :overview}
+           {:db       (-> db'
+                          (assoc :domain domain)
+                          (assoc-in [:ui :pin :digits] "")
+                          (assoc-in [:ui :pin :error] "Falsche PIN"))
+            :persist! {:event event :snapshot domain}}))))))
+
+(re-frame/reg-event-fx
+ ::sign-out
+ (fn-traced [{:keys [db]} _]
+   (let [{:keys [domain event]} (reducer/apply-event
+                                 (:domain db)
+                                 {:event/type      :auth/signed-out
+                                  :event/timestamp (.toISOString (js/Date.))
+                                  :event/actor     (get-in db [:ui :current-user-id])})]
+     {:db       (-> db
+                    (assoc :domain domain)
+                    (assoc-in [:ui :current-user-id] nil)
+                    (assoc-in [:ui :pin] {:user nil :digits "" :error nil :success false}))
+      :persist! {:event event :snapshot domain}
+      :navigate :home})))
 
 (re-frame/reg-event-db
  ::pin-backspace

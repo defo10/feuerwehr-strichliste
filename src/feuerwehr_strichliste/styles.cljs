@@ -141,6 +141,32 @@
      :font-size     "1rem"
      :cursor        "pointer"}]
 
+   [:.top-nav
+    {:position        "sticky"
+     :top             0
+     :display         "flex"
+     :align-items     "center"
+     :justify-content "space-between"
+     :gap             (rem 1)
+     :padding         "1rem 1.5rem"
+     :background      "var(--color-surface)"
+     :border-bottom   "1px solid var(--color-outline)"
+     :z-index         10}]
+
+   [:.top-nav-name
+    {:font-weight 600
+     :font-size   (rem 1.1)}]
+
+   [:.top-nav-logout
+    {:background  "none"
+     :border      "none"
+     :font-size   (rem 1)
+     :font-weight 600
+     :color       "var(--color-primary)"
+     :cursor      "pointer"
+     :padding     0}
+    [:&:hover {:opacity 0.8}]]
+
    [:.pin-modal-overlay
     {:position        "fixed"
      :inset           0

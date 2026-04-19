@@ -20,7 +20,7 @@
   [snapshot _event]
   snapshot)
 
-(defmethod reduce-event :auth/sign-in-attempted
+(defmethod reduce-event :auth/signed-out
   [snapshot _event]
   snapshot)
 
