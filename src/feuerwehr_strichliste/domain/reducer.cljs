@@ -3,6 +3,7 @@
 (def empty-snapshot
   {:users         {}
    :balances      {}
+   :items         {}
    :next-event-id 0})
 
 (defmulti reduce-event (fn [_snapshot event] (:event/type event)))
@@ -15,6 +16,16 @@
              :user/role     role
              :user/pin-hash pin-hash
              :user/status   :active}))
+
+(defmethod reduce-event :item/created
+  [snapshot {:keys [event/id item/type item/name item/price item/stock]}]
+  (assoc-in snapshot [:items id]
+            {:item/id     id
+             :item/type   type
+             :item/name   name
+             :item/price  price
+             :item/stock  stock
+             :item/status :active}))
 
 (defmethod reduce-event :auth/sign-in-attempted
   [snapshot _event]

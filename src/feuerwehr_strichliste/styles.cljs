@@ -255,8 +255,7 @@
      :align-items   "stretch"
      :border        "1px solid var(--color-outline)"
      :border-radius "var(--radius)"
-     :overflow      "hidden"}
-    [:&:focus-within {:border-color "var(--color-primary)"}]]
+     :overflow      "hidden"}]
 
    [:.price-currency
     {:padding     "0.625rem 0.75rem"
