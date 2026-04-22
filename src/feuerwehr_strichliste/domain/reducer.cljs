@@ -18,14 +18,15 @@
              :user/status   :active}))
 
 (defmethod reduce-event :item/created
-  [snapshot {:keys [event/id item/type item/name item/price item/stock]}]
+  [snapshot {:keys [event/id item/type item/name item/price item/stock item/image-key]}]
   (assoc-in snapshot [:items id]
-            {:item/id     id
-             :item/type   type
-             :item/name   name
-             :item/price  price
-             :item/stock  stock
-             :item/status :active}))
+            (cond-> {:item/id     id
+                     :item/type   type
+                     :item/name   name
+                     :item/price  price
+                     :item/stock  stock
+                     :item/status :active}
+              image-key (assoc :item/image-key image-key))))
 
 (defmethod reduce-event :auth/sign-in-attempted
   [snapshot _event]

@@ -1,5 +1,7 @@
 (ns feuerwehr-strichliste.components.new-item-form
   (:require [reagent.core :as r]
+            [re-frame.core :as re-frame]
+            [feuerwehr-strichliste.events :as events]
             [clojure.string :as str]))
 
 (defn- format-cents [cents]
@@ -8,6 +10,33 @@
 (defn- valid? [{:keys [name price-cents]}]
   (and (not (str/blank? name))
        (pos? price-cents)))
+
+(defn- compress-image! [file form]
+  (let [tmp-url (js/URL.createObjectURL file)
+        img     (js/Image.)]
+    (set! (.-onload img)
+          (fn []
+            (let [max-size 800
+                  w        (.-naturalWidth img)
+                  h        (.-naturalHeight img)
+                  scale    (min 1 (/ max-size (max w h)))
+                  tw       (js/Math.round (* w scale))
+                  th       (js/Math.round (* h scale))
+                  canvas   (.createElement js/document "canvas")]
+              (set! (.-width canvas) tw)
+              (set! (.-height canvas) th)
+              (.drawImage (.getContext canvas "2d") img 0 0 tw th)
+              (js/URL.revokeObjectURL tmp-url)
+              (.toBlob canvas
+                       (fn [blob]
+                         (when-let [old (:image-preview @form)]
+                           (js/URL.revokeObjectURL old))
+                         (swap! form assoc
+                                :image         blob
+                                :image-preview (js/URL.createObjectURL blob)))
+                       "image/jpeg"
+                       0.85))))
+    (set! (.-src img) tmp-url)))
 
 (defn new-item-form [_on-close]
   (let [form (r/atom {:type "food" :name "" :price-cents 0 :stock 0})]
@@ -39,7 +68,13 @@
           [:label
            "Bild "
            [:span.optional-hint "(optional)"]]
-          [:input.optional-input {:type "file" :accept "image/*"}]]
+          [:input.optional-input {:type      "file"
+                                  :accept    "image/*"
+                                  :capture   "environment"
+                                  :on-change #(when-let [file (-> % .-target .-files (aget 0))]
+                                                (compress-image! file form))}]
+          (when-let [url (:image-preview f)]
+            [:img.image-preview {:src url :alt "Vorschau"}])]
 
          [:div.form-field
           [:label "Preis pro Einheit"]
@@ -86,5 +121,14 @@
          [:div.form-actions
           [:button.form-submit
            {:type     "submit"
-            :disabled (not (valid? f))}
+            :disabled (not (valid? f))
+            :on-click (fn [e]
+                        (.preventDefault e)
+                        (re-frame/dispatch [::events/item-create
+                                            {:type  (:type f)
+                                             :name  (:name f)
+                                             :price (:price-cents f)
+                                             :stock (:stock f)
+                                             :image (:image f)}])
+                        (on-close))}
            "Hinzufügen"]]]))))

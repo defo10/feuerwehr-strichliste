@@ -227,6 +227,14 @@
     {:border-style "dashed !important"
      :color        "var(--color-on-surface-muted)"}]
 
+   [:.image-preview
+    {:display       "block"
+     :max-width     "100%"
+     :max-height    (px 160)
+     :border-radius "var(--radius)"
+     :object-fit    "contain"
+     :margin-top    "0.25rem"}]
+
    [:.type-picker
     {:display       "flex"
      :border        "1px solid var(--color-outline)"

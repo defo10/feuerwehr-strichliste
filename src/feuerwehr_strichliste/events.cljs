@@ -30,6 +30,24 @@
  (fn-traced [db [_ query]]
    (assoc-in db [:ui :search-query] query)))
 
+(re-frame/reg-event-fx
+ ::item-create
+ (fn-traced [{:keys [db]} [_ {:keys [type name price stock image]}]]
+   (let [item-id               (get-in db [:domain :next-event-id])
+         {:keys [domain event]} (reducer/apply-event
+                                 (:domain db)
+                                 (cond-> {:event/type      :item/created
+                                          :event/timestamp (.toISOString (js/Date.))
+                                          :event/actor     (get-in db [:ui :current-user-id])
+                                          :item/type       type
+                                          :item/name       name
+                                          :item/price      price
+                                          :item/stock      stock}
+                                   image (assoc :item/image-key item-id)))]
+     (cond-> {:db       (assoc db :domain domain)
+              :persist! {:event event :snapshot domain}}
+       image (assoc :persist-image! {:item-id item-id :blob image})))))
+
 (re-frame/reg-event-db
  :error
  (fn-traced [db [_ type message]]
@@ -101,6 +119,15 @@
  (fn-traced [db _]
    (update-in db [:ui :pin :digits]
               #(subs % 0 (max 0 (dec (count %)))))))
+
+(re-frame/reg-fx
+ :persist-image!
+ (fn [{:keys [item-id blob]}]
+   (go
+     (try
+       (<! (k/assoc-in @storage/store [:item-images item-id] blob))
+       (catch :default e
+         (re-frame/dispatch [:error :errors/persist-failed (.-message e)]))))))
 
 (re-frame/reg-fx
  :persist!

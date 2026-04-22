@@ -52,6 +52,8 @@ The app trusts its users but logs everything.
 
 Written in ClojureScript using re-frame. Persisted with konserve.
 
+As ClojureScript is a dynamic programming language, we must be very disciplined about introducing different data shapes. As such we want to define core data models in . We must be particulary careful about introducing semenatically similar but slightly different models, as this will introduce complexity down the line.
+
 ---
 
 ### Glossary
