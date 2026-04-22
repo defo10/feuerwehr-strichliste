@@ -1,4 +1,6 @@
-(ns feuerwehr-strichliste.domain.reducer)
+(ns feuerwehr-strichliste.domain.reducer
+  (:require [feuerwehr-strichliste.schema :as schema]
+            [malli.core :as m]))
 
 (def empty-snapshot
   {:users         {}
@@ -41,8 +43,9 @@
   [snapshot _event]
   snapshot)
 
-; build-event receives the assigned sequential id and must return a complete event map.
+; build-event receives the assigned sequential id and must return a complete event — see schema/DomainEvent.
 (defn apply-event [domain build-event]
+  {:post [(m/validate schema/DomainEvent (:event %))]}
   (let [id      (:next-event-id domain)
         event   (build-event id)
         domain' (-> (reduce-event domain event)

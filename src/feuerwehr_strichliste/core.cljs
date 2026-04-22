@@ -7,8 +7,7 @@
    [feuerwehr-strichliste.views :as views]
    [feuerwehr-strichliste.config :as config]
    [feuerwehr-strichliste.styles :as styles]
-   [feuerwehr-strichliste.storage :as storage]
-   [feuerwehr-strichliste.domain.commands]))
+   [feuerwehr-strichliste.storage :as storage]))
 
 
 (defn dev-setup []

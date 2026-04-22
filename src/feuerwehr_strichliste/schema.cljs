@@ -36,5 +36,66 @@
              [id (assoc user :user/id id :user/role :admin)]))
          (mg/sample User {:size n}))))
 
+(def Item
+  [:map
+   [:item/id        nat-int?]
+   [:item/type      [:enum :drink :food]]
+   [:item/name      string?]
+   [:item/price     pos-int?]
+   [:item/stock     nat-int?]
+   [:item/status    [:enum :active :inactive]]
+   [:item/image-key {:optional true} nat-int?]])
+
+(def UserCreatedEvent
+  [:map
+   [:event/id        nat-int?]
+   [:event/timestamp string?]
+   [:event/actor     nat-int?]
+   [:event/type      [:= :user/created]]
+   [:user/name       string?]
+   [:user/role       [:enum :member :kitchen :admin]]
+   [:user/pin-hash   string?]])
+
+(def ItemCreatedEvent
+  [:map
+   [:event/id        nat-int?]
+   [:event/timestamp string?]
+   [:event/actor     nat-int?]
+   [:event/type      [:= :item/created]]
+   [:item/type       [:enum :drink :food]]
+   [:item/name       string?]
+   [:item/price      pos-int?]
+   [:item/stock      nat-int?]
+   [:item/image-key  {:optional true} nat-int?]])
+
+(def AuthSignInAttemptedEvent
+  [:map
+   [:event/id        nat-int?]
+   [:event/timestamp string?]
+   [:event/actor     nat-int?]
+   [:event/type      [:= :auth/sign-in-attempted]]
+   [:auth/success    boolean?]])
+
+(def AuthSignedOutEvent
+  [:map
+   [:event/id        nat-int?]
+   [:event/timestamp string?]
+   [:event/actor     nat-int?]
+   [:event/type      [:= :auth/signed-out]]])
+
+(def DomainEvent
+  [:multi {:dispatch :event/type}
+   [:user/created           UserCreatedEvent]
+   [:item/created           ItemCreatedEvent]
+   [:auth/sign-in-attempted AuthSignInAttemptedEvent]
+   [:auth/signed-out        AuthSignedOutEvent]])
+
+(def Snapshot
+  [:map
+   [:users          [:map-of nat-int? User]]
+   [:balances       [:map-of nat-int? number?]]
+   [:items          [:map-of nat-int? Item]]
+   [:next-event-id  nat-int?]])
+
 (comment
   (generate-users 1))

@@ -6,6 +6,7 @@
   (map (fn [user]
          {:event/type      :user/created
           :event/timestamp "2026-04-18T00:00:00Z"
+          :event/actor     0
           :user/name       (:user/name user)
           :user/role       (:user/role user)
           :user/pin-hash   (:user/pin-hash user)})
