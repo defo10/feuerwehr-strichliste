@@ -7,6 +7,17 @@
    [feuerwehr-strichliste.components.drawer :refer [drawer]]
    [feuerwehr-strichliste.components.new-item-form :refer [new-item-form]]))
 
+(defn- format-price [cents]
+  (str (quot cents 100) "," (let [r (mod cents 100)] (if (< r 10) (str "0" r) r)) " €"))
+
+(defn- item-card [{:item/keys [name price stock type]}]
+  [:div.item-card
+   [:div.item-card-name name]
+   [:div.item-card-price (format-price price)]
+   [:div.item-card-meta
+    [:span.item-card-type (if (#{:food "food"} type) "Essen" "Trinken")]
+    [:span.item-card-stock (str "Vorrat: " stock)]]])
+
 (defn- actions-for [role open-new-item!]
   (let [kitchen [{:icon "➕" :color "#4CAF50" :title "Neues Essen/Trinken hinzufügen" :on-click open-new-item!}
                  {:icon "✏️"  :color "#2196F3" :title "Essen/Trinken bearbeiten"}
@@ -30,6 +41,7 @@
 
 (defn overview-page []
   (let [current-user  (re-frame/subscribe [::subs/current-user])
+        items         (re-frame/subscribe [::subs/items])
         drawer-open?  (r/atom false)]
     (fn []
       (let [user    @current-user
@@ -42,6 +54,9 @@
            "Fertig"]]
          (when (seq actions)
            [action-bar actions])
+         [:div.item-grid
+          (for [item @items]
+            ^{:key (:item/id item)} [item-card item])]
          [drawer {:open?    @drawer-open?
                   :on-close #(reset! drawer-open? false)
                   :title    "Neues Essen/Trinken"}

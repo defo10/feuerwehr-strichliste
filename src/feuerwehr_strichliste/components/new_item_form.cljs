@@ -39,7 +39,7 @@
     (set! (.-src img) tmp-url)))
 
 (defn new-item-form [_on-close]
-  (let [form (r/atom {:item/type "food" :item/name "" :item/price 0 :item/stock 0})]
+  (let [form (r/atom {:item/type :food :item/name "" :item/price 0 :item/stock 0})]
     (fn [on-close]
       (let [f @form]
         [:form.drawer-form {:on-submit #(.preventDefault %)}
@@ -47,14 +47,18 @@
          [:div.form-field
           [:label "Typ"]
           [:div.type-picker
-           (for [[value label] [["food" "Essen"] ["drink" "Trinken"]]]
+           (for [[value label] [[:food "Essen"] [:drink "Trinken"]]]
              ^{:key value}
              [:label.type-option {:class (when (= (:item/type f) value) "selected")}
               [:input {:type      "radio"
                        :name      "type"
                        :value     value
                        :checked   (= (:item/type f) value)
-                       :on-change #(swap! form assoc :item/type value)}]
+                       :on-change #(swap!
+                                    form
+                                    assoc
+                                    :item/type
+                                    (keyword value))}]
               label])]]
 
          [:div.form-field

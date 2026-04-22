@@ -162,6 +162,30 @@ This separates the app-db into two regions:
 
 ---
 
+### Subscriptions
+
+Subscriptions are layered. Never do computation in an extractor.
+
+**Layer 2 — extractor**: reads a raw slice of `db`. Runs on every event, so must be a plain `get`/`get-in`. No filtering, sorting, or transformation.
+
+```clojure
+(re-frame/reg-sub
+ ::items-map
+ (fn [db _] (get-in db [:domain :items])))
+```
+
+**Layer 3+ — materializer**: depends on a layer-2 sub via `:<-`. Does all filtering, sorting, and derivation. Only re-runs when its inputs change.
+
+```clojure
+(re-frame/reg-sub
+ ::items
+ :<- [::items-map]
+ (fn [items-map _]
+   (->> items-map vals (filter active?) (sort-by :item/name))))
+```
+
+---
+
 ### Event Flow
 
 ```
