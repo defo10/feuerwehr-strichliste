@@ -18,7 +18,12 @@
              :user/status   :active}))
 
 (defmethod reduce-event :item/created
-  [snapshot {:keys [event/id item/type item/name item/price item/stock item/image-key]}]
+  [snapshot {:keys [event/id
+                    item/type
+                    item/name
+                    item/price
+                    item/stock
+                    item/image-key]}]
   (assoc-in snapshot [:items id]
             (cond-> {:item/id     id
                      :item/type   type
@@ -36,9 +41,10 @@
   [snapshot _event]
   snapshot)
 
-(defn apply-event [domain event]
+; build-event receives the assigned sequential id and must return a complete event map.
+(defn apply-event [domain build-event]
   (let [id      (:next-event-id domain)
-        event'  (assoc event :event/id id)
-        domain' (-> (reduce-event domain event')
+        event   (build-event id)
+        domain' (-> (reduce-event domain event)
                     (update :next-event-id inc))]
-    {:domain domain' :event event'}))
+    {:domain domain' :event event}))

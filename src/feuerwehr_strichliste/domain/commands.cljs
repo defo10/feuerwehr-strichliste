@@ -7,10 +7,12 @@
  (fn [{:keys [db]} [_ {:keys [name role pin-hash]}]]
    (let [{:keys [domain event]} (reducer/apply-event
                                  (:domain db)
-                                 {:event/type      :user/created
-                                  :event/timestamp (.toISOString (js/Date.))
-                                  :user/name       name
-                                  :user/role       role
-                                  :user/pin-hash   pin-hash})]
+                                 (fn [id]
+                                   {:event/type      :user/created
+                                    :event/id        id
+                                    :event/timestamp (.toISOString (js/Date.))
+                                    :user/name       name
+                                    :user/role       role
+                                    :user/pin-hash   pin-hash}))]
      {:db       (assoc db :domain domain)
       :persist! {:event event :snapshot domain}})))

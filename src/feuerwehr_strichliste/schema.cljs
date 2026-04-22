@@ -33,5 +33,8 @@
         (map-indexed
          (fn [i user]
            (let [id (inc i)]
-             [id (assoc user :user/id id)]))
+             [id (assoc user :user/id id :user/role :admin)]))
          (mg/sample User {:size n}))))
+
+(comment
+  (generate-users 1))

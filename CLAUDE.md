@@ -52,15 +52,15 @@ The app trusts its users but logs everything.
 
 Written in ClojureScript using re-frame. Persisted with konserve.
 
-As ClojureScript is a dynamic programming language, we must be very disciplined about introducing different data shapes. As such we want to define core data models in . We must be particulary careful about introducing semenatically similar but slightly different models, as this will introduce complexity down the line.
+As ClojureScript is a dynamic programming language, we must be very disciplined about introducing different data shapes. As such we want to define core data models consciously. We must be particulary careful about introducing semenatically similar but slightly different models, as this will introduce complexity down the line.
+
+Data shapes must be communicated through the parameter names. Respect Curly's Law: A variable should mean one thing, and one thing only. It should not mean one thing in one circumstance, and carry a different value from a different domain some other time. It should not mean two things at once. It must not be both a floor polish and a dessert topping. It should mean One Thing, and should mean it all of the time.
 
 ---
 
 ### Glossary
 
 These five terms carry specific meaning throughout the codebase.
-
-**Command** — A user's intent to change something. Never persisted.
 
 **Domain Event** — An immutable fact that happened. Append-only. Once in the log, it stays. Has a sequential integer ID.
 
@@ -184,7 +184,7 @@ re-frame command handler
 
 Steps 1 and 2 are sequential: event before snapshot. This preserves the invariant that replaying the log reproduces the snapshot.
 
-The UI updates synchronously via `:db` before konserve writes complete. On a local-only app, storage writes are near-certain to succeed. The worst case — tablet dies mid-write — loses the last action.
+The UI updates via `:db` before konserve writes complete. On a local-only app, storage writes are near-certain to succeed. The worst case — tablet dies mid-write — loses the last action.
 
 ---
 

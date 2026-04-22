@@ -9,10 +9,13 @@
           :user/name       (:user/name user)
           :user/role       (:user/role user)
           :user/pin-hash   (:user/pin-hash user)})
-       (vals (schema/generate-users 20))))
+       (vals (schema/generate-users 5))))
 
 (def default-db
-  {:domain (reduce #(:domain (reducer/apply-event %1 %2)) reducer/empty-snapshot (seed-events))
+  {:domain (reduce (fn [domain event]
+                     (:domain (reducer/apply-event domain #(assoc event :event/id %))))
+                   reducer/empty-snapshot
+                   (seed-events))
    :ui     {:current-user-id nil
             :pin             {:user nil :digits "" :error nil :success false}
             :search-query    ""}})
