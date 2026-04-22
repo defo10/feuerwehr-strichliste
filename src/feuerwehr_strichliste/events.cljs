@@ -32,7 +32,7 @@
 
 (re-frame/reg-event-fx
  ::item-create
- (fn-traced [{:keys [db]} [_ {:keys [type name price stock image]}]]
+ (fn-traced [{:keys [db]} [_ {:item/keys [type name price stock] :keys [image]}]]
             (let [{:keys [domain event]} (reducer/apply-event
                                           (:domain db)
                                           (fn [id]

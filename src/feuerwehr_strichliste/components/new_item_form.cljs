@@ -7,9 +7,9 @@
 (defn- format-cents [cents]
   (str (quot cents 100) "," (let [r (mod cents 100)] (if (< r 10) (str "0" r) r))))
 
-(defn- valid? [{:keys [name price-cents]}]
+(defn- valid? [{:item/keys [name price]}]
   (and (not (str/blank? name))
-       (pos? price-cents)))
+       (pos? price)))
 
 (defn- compress-image! [file form]
   (let [tmp-url (js/URL.createObjectURL file)
@@ -39,7 +39,7 @@
     (set! (.-src img) tmp-url)))
 
 (defn new-item-form [_on-close]
-  (let [form (r/atom {:type "food" :name "" :price-cents 0 :stock 0})]
+  (let [form (r/atom {:item/type "food" :item/name "" :item/price 0 :item/stock 0})]
     (fn [on-close]
       (let [f @form]
         [:form.drawer-form {:on-submit #(.preventDefault %)}
@@ -49,20 +49,20 @@
           [:div.type-picker
            (for [[value label] [["food" "Essen"] ["drink" "Trinken"]]]
              ^{:key value}
-             [:label.type-option {:class (when (= (:type f) value) "selected")}
+             [:label.type-option {:class (when (= (:item/type f) value) "selected")}
               [:input {:type      "radio"
                        :name      "type"
                        :value     value
-                       :checked   (= (:type f) value)
-                       :on-change #(swap! form assoc :type value)}]
+                       :checked   (= (:item/type f) value)
+                       :on-change #(swap! form assoc :item/type value)}]
               label])]]
 
          [:div.form-field
           [:label "Name"]
           [:input {:type        "text"
                    :placeholder "z.B. Apfelsaft"
-                   :value       (:name f)
-                   :on-change   #(swap! form assoc :name (.. % -target -value))}]]
+                   :value       (:item/name f)
+                   :on-change   #(swap! form assoc :item/name (.. % -target -value))}]]
 
          [:div.form-field
           [:label
@@ -82,20 +82,20 @@
            [:input.price-input
             {:type            "text"
              :input-mode      "numeric"
-             :value           (format-cents (:price-cents f))
+             :value           (format-cents (:item/price f))
              :on-change       identity
              :on-before-input (fn [e]
                                 (.preventDefault e)
                                 (when-let [d (.-data e)]
                                   (when (re-matches #"\d" d)
-                                    (swap! form update :price-cents
+                                    (swap! form update :item/price
                                            (fn [c]
                                              (let [n (+ (* c 10) (js/parseInt d))]
                                                (if (< n 1000000) n c)))))))
              :on-key-down     (fn [e]
                                 (when (= "Backspace" (.-key e))
                                   (.preventDefault e)
-                                  (swap! form update :price-cents #(quot % 10))))}]
+                                  (swap! form update :item/price #(quot % 10))))}]
            [:span.price-currency "€"]]]
 
          [:div.form-field
@@ -103,20 +103,20 @@
           [:input.price-input
            {:type            "text"
             :input-mode      "numeric"
-            :value           (str (:stock f))
+            :value           (str (:item/stock f))
             :on-change       identity
             :on-before-input (fn [e]
                                (.preventDefault e)
                                (when-let [d (.-data e)]
                                  (when (re-matches #"\d" d)
-                                   (swap! form update :stock
+                                   (swap! form update :item/stock
                                           (fn [s]
                                             (let [n (+ (* s 10) (js/parseInt d))]
                                               (if (< n 100000) n s)))))))
             :on-key-down     (fn [e]
                                (when (= "Backspace" (.-key e))
                                  (.preventDefault e)
-                                 (swap! form update :stock #(quot % 10))))}]]
+                                 (swap! form update :item/stock #(quot % 10))))}]]
 
          [:div.form-actions
           [:button.form-submit
@@ -125,10 +125,10 @@
             :on-click (fn [e]
                         (.preventDefault e)
                         (re-frame/dispatch [::events/item-create
-                                            {:type  (:type f)
-                                             :name  (:name f)
-                                             :price (:price-cents f)
-                                             :stock (:stock f)
-                                             :image (:image f)}])
+                                            {:item/type  (:item/type f)
+                                             :item/name  (:item/name f)
+                                             :item/price (:item/price f)
+                                             :item/stock (:item/stock f)
+                                             :image      (:image f)}])
                         (on-close))}
            "Hinzufügen"]]]))))
