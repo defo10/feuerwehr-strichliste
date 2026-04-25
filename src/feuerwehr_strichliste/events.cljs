@@ -9,6 +9,11 @@
  (fn-traced [_ _]
    db/default-db))
 
+(re-frame/reg-event-db
+ ::initialize-empty-db
+ (fn-traced [_ _]
+   db/empty-db))
+
 (re-frame/reg-event-fx
  ::navigate
  (fn-traced [_ [_ handler]]
