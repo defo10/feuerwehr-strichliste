@@ -27,26 +27,32 @@
        (= 1 qty)   (update-in db [:ui :cart] dissoc item-id)
        :else        (update-in db [:ui :cart item-id] dec)))))
 
+(re-frame/reg-event-db
+ ::show-receipt
+ (fn-traced [db _]
+   (let [cart  (get-in db [:ui :cart])
+         items (get-in db [:domain :items])
+         pairs (->> cart
+                    (keep (fn [[item-id qty]]
+                            (when (pos? qty)
+                              (when-let [item (get items item-id)]
+                                {:item item :quantity qty}))))
+                    (sort-by #(get-in % [:item :item/name])))
+         total (reduce (fn [sum {:keys [item quantity]}]
+                         (+ sum (* quantity (:item/price item))))
+                       0 pairs)]
+     (assoc-in db [:ui :receipt] {:entries pairs :total total}))))
+
+(re-frame/reg-event-db
+ ::dismiss-receipt
+ (fn-traced [db _]
+   (assoc-in db [:ui :receipt] nil)))
+
 (re-frame/reg-event-fx
- ::checkout
+ ::confirm-checkout
  (fn-traced [{:keys [db]} _]
-   (let [cart    (get-in db [:ui :cart])
-         items   (get-in db [:domain :items])
-         user-id (get-in db [:ui :current-user-id])
-         pairs   (->> cart
-                      (keep (fn [[item-id qty]]
-                              (when (pos? qty)
-                                (when-let [item (get items item-id)]
-                                  {:item item :quantity qty}))))
-                      (sort-by #(get-in % [:item :item/name])))
-         entries (map (fn [{:keys [item quantity]}]
-                        {:item-id    (:item/id item)
-                         :quantity   quantity
-                         :unit-price (:item/price item)})
-                      pairs)
-         total   (reduce (fn [sum {:keys [item quantity]}]
-                           (+ sum (* quantity (:item/price item))))
-                         0 pairs)
+   (let [entries  (get-in db [:ui :receipt :entries])
+         user-id  (get-in db [:ui :current-user-id])
          {:keys [domain event]} (reducer/apply-event
                                  (:domain db)
                                  (fn [id]
@@ -54,11 +60,12 @@
                                     :event/id         id
                                     :event/timestamp  (.toISOString (js/Date.))
                                     :event/actor      user-id
-                                    :checkout/entries (vec entries)}))]
-     {:db       (-> db
-                    (assoc :domain domain)
-                    (assoc-in [:ui :cart] {})
-                    (assoc-in [:ui :receipt] {:entries pairs :total total}))
+                                    :checkout/entries (vec (map (fn [{:keys [item quantity]}]
+                                                                  {:item-id    (:item/id item)
+                                                                   :quantity   quantity
+                                                                   :unit-price (:item/price item)})
+                                                                entries))}))]
+     {:db       (assoc db :domain domain)
       :persist! {:event event :snapshot domain}})))
 
 (re-frame/reg-event-fx

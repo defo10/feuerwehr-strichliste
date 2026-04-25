@@ -8,20 +8,20 @@
 
 (def ^:private rules
   [(at-keyframes "shake"
-     [:from  {:transform "rotate(0deg)"}]
-     ["20%"  {:transform "rotate(-6deg)"}]
-     ["40%"  {:transform "rotate(6deg)"}]
-     ["60%"  {:transform "rotate(-4deg)"}]
-     ["80%"  {:transform "rotate(4deg)"}]
-     [:to    {:transform "rotate(0deg)"}])
+                 [:from  {:transform "rotate(0deg)"}]
+                 ["20%"  {:transform "rotate(-6deg)"}]
+                 ["40%"  {:transform "rotate(6deg)"}]
+                 ["60%"  {:transform "rotate(-4deg)"}]
+                 ["80%"  {:transform "rotate(4deg)"}]
+                 [:to    {:transform "rotate(0deg)"}])
 
    (at-keyframes "overlay-in"
-     [:from {:backdrop-filter "blur(0px)" :background "rgba(0,0,0,0)"}]
-     [:to   {:backdrop-filter "blur(6px)" :background "rgba(0,0,0,0.4)"}])
+                 [:from {:backdrop-filter "blur(0px)" :background "rgba(0,0,0,0)"}]
+                 [:to   {:backdrop-filter "blur(6px)" :background "rgba(0,0,0,0.4)"}])
 
    (at-keyframes "modal-in"
-     [:from {:opacity 0 :transform "scale(0.95) translateY(8px)"}]
-     [:to   {:opacity 1 :transform "scale(1) translateY(0)"}])
+                 [:from {:opacity 0 :transform "scale(0.95) translateY(8px)"}]
+                 [:to   {:opacity 1 :transform "scale(1) translateY(0)"}])
 
    [":root"
     {"--color-primary"          "#cc2936"
@@ -467,7 +467,7 @@
 
    [:.item-grid
     {:display               "grid"
-     :grid-template-columns "repeat(3, 1fr)"
+     :grid-template-columns "repeat(auto-fit, minmax(180px, 1fr))"
      :gap                   (rem 1)
      :padding               "1.5rem"}]
 
@@ -485,19 +485,27 @@
                               :background   "#fff5f5"}]
     ["&.item-card--empty"    {:opacity "0.45"}]]
 
+   [:.item-card-header
+    {:display         "flex"
+     :align-items     "baseline"
+     :justify-content "space-between"
+     :gap             (rem 0.75)}]
+
    [:.item-card-name
     {:font-size   (rem 1.1)
      :font-weight 700
-     :line-height "1.3"}]
+     :line-height "1.3"
+     :flex        1}]
 
-   [:.item-card-price
-    {:font-size   (rem 0.9)
+   [:.item-card-meta
+    {:font-size   (rem 0.875)
      :color       "var(--color-on-surface-muted)"
-     :font-weight 500}]
+     :white-space "nowrap"}]
 
    [:.item-card-controls
     {:display     "flex"
      :align-items "center"
+     :justify-content "space-evenly"
      :gap         (rem 0.75)
      :margin      "0.125rem 0"}]
 
@@ -527,9 +535,6 @@
      :text-align            "center"
      :font-variant-numeric  "tabular-nums"}]
 
-   [:.item-card-stock
-    {:font-size "0.78rem"
-     :color     "var(--color-on-surface-muted)"}]
 
    [:.receipt-overlay
     {:position        "fixed"
@@ -604,9 +609,13 @@
      :font-variant-numeric  "tabular-nums"
      :color                 "var(--color-primary)"}]
 
-   [:.receipt-close
-    {:margin-top    "0.5rem"
-     :width         "100%"
+   [:.receipt-actions
+    {:display    "flex"
+     :gap        "0.75rem"
+     :margin-top "0.5rem"}]
+
+   [:.receipt-confirm
+    {:flex          1
      :padding       "0.875rem"
      :background    "var(--color-primary)"
      :color         "var(--color-on-primary)"
@@ -617,6 +626,18 @@
      :cursor        "pointer"
      :transition    "opacity 0.1s"}
     [:&:hover {:opacity 0.9}]]
+
+   [:.receipt-edit
+    {:padding       "0.875rem 1.25rem"
+     :background    "transparent"
+     :color         "var(--color-on-surface)"
+     :border        "1px solid var(--color-outline)"
+     :border-radius "var(--radius)"
+     :font-size     (rem 1.1)
+     :font-weight   600
+     :cursor        "pointer"
+     :transition    "background 0.1s"}
+    [:&:hover {:background "var(--color-surface-hover)"}]]
 
    [:.alphabet-bar
     {:position       "fixed"

@@ -47,3 +47,13 @@
  :<- [::items]
  (fn [items _]
    (group-by :item/type items)))
+
+(re-frame/reg-sub
+ ::cart-total
+ :<- [::cart]
+ :<- [::items-map]
+ (fn [[cart items-map] _]
+   (reduce (fn [sum [item-id qty]]
+             (+ sum (* qty (get-in items-map [item-id :item/price] 0))))
+           0
+           cart)))

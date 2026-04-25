@@ -6,7 +6,7 @@
             [feuerwehr-strichliste.auth.events :as auth-events]
             [clojure.string :as str]))
 
-(defn- format-price [cents]
+(defn format-price [cents]
   (str (quot cents 100) "," (let [r (mod cents 100)] (if (< r 10) (str "0" r) r)) " €"))
 
 (defn item-card [{:item/keys [id]}]
@@ -18,8 +18,11 @@
             at-max?    (>= qty stock)]
         [:div.item-card {:class (str (when selected? "item-card--selected ")
                                      (when-not available? "item-card--empty"))}
-         [:div.item-card-name name]
-         [:div.item-card-price (format-price price)]
+         [:div.item-card-header
+          [:span.item-card-name name]
+          [:span.item-card-meta (if available?
+                                  (str (format-price price) " / " stock " übrig")
+                                  (str (format-price price) " / Ausverkauft"))]]
          [:div.item-card-controls
           [:button.item-card-btn
            {:disabled (or (not available?) (zero? qty))
@@ -29,8 +32,7 @@
           [:button.item-card-btn
            {:disabled (or (not available?) at-max?)
             :on-click #(re-frame/dispatch [::events/increment id])}
-           "+"]]
-         [:div.item-card-stock (if available? (str stock " übrig") "Ausverkauft")]]))))
+           "+"]]]))))
 
 (defn receipt-overlay [{:keys [entries total]}]
   [:div.receipt-overlay
@@ -47,9 +49,15 @@
     [:div.receipt-total
      [:span "Gesamt"]
      [:span.receipt-total-amount (format-price total)]]
-    [:button.receipt-close
-     {:on-click #(re-frame/dispatch [::auth-events/sign-out])}
-     "Schließen"]]])
+    [:div.receipt-actions
+     [:button.receipt-edit
+      {:on-click #(re-frame/dispatch [::events/dismiss-receipt])}
+      "Bearbeiten"]
+     [:button.receipt-confirm
+      {:on-click (fn []
+                   (re-frame/dispatch [::events/confirm-checkout])
+                   (re-frame/dispatch [::auth-events/sign-out]))}
+      "Okay"]]]])
 
 ;;
 ;; New item form

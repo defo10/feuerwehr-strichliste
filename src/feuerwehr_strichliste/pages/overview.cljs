@@ -7,7 +7,7 @@
    [feuerwehr-strichliste.item.subs :as item-subs]
    [feuerwehr-strichliste.item.events :as item-events]
    [feuerwehr-strichliste.components.drawer :refer [drawer]]
-   [feuerwehr-strichliste.item.views :refer [new-item-form item-card receipt-overlay]]))
+   [feuerwehr-strichliste.item.views :refer [new-item-form item-card receipt-overlay format-price]]))
 
 (defn- actions-for [role open-new-item!]
   (let [kitchen [{:icon "➕" :color "#4CAF50" :title "Neues Essen/Trinken hinzufügen" :on-click open-new-item!}
@@ -35,6 +35,7 @@
         active-tab    (re-frame/subscribe [::item-subs/active-tab])
         items-by-type (re-frame/subscribe [::item-subs/items-by-type])
         has-items?    (re-frame/subscribe [::item-subs/cart-has-items?])
+        cart-total    (re-frame/subscribe [::item-subs/cart-total])
         receipt       (re-frame/subscribe [::item-subs/receipt])
         drawer-open?  (r/atom false)]
     (fn []
@@ -47,9 +48,11 @@
            [:span.top-nav-name (:user/name user)]
            [:button.top-nav-logout
             {:on-click #(if @has-items?
-                          (re-frame/dispatch [::item-events/checkout])
+                          (re-frame/dispatch [::item-events/show-receipt])
                           (re-frame/dispatch [::auth-events/sign-out]))}
-            "Fertig"]]
+            (if @has-items?
+              (str "Fertig (" (format-price @cart-total) ")")
+              "Fertig")]]
           (when (seq actions)
             [action-bar actions])
           [:div.tab-bar
