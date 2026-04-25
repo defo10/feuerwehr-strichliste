@@ -1,7 +1,7 @@
-(ns feuerwehr-strichliste.components.search-bar
+(ns feuerwehr-strichliste.home.search-bar
   (:require [re-frame.core :as re-frame]
-            [feuerwehr-strichliste.events :as events]
-            [feuerwehr-strichliste.subs :as subs]))
+            [feuerwehr-strichliste.home.events :as events]
+            [feuerwehr-strichliste.home.subs :as subs]))
 
 (defn search-bar []
   (let [query (re-frame/subscribe [::subs/search-query])]

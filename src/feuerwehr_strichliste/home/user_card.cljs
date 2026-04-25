@@ -1,6 +1,6 @@
-(ns feuerwehr-strichliste.components.user-card
+(ns feuerwehr-strichliste.home.user-card
   (:require [re-frame.core :as re-frame]
-            [feuerwehr-strichliste.events :as events]))
+            [feuerwehr-strichliste.home.events :as events]))
 
 (defn user-card [user]
   [:div.user-list-item

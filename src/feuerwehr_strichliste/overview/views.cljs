@@ -1,11 +1,12 @@
-(ns feuerwehr-strichliste.pages.overview
+(ns feuerwehr-strichliste.overview.views
   (:require
    [reagent.core :as r]
    [re-frame.core :as re-frame]
-   [feuerwehr-strichliste.subs :as subs]
+   [feuerwehr-strichliste.subs :as app-subs]
    [feuerwehr-strichliste.events :as events]
+   [feuerwehr-strichliste.overview.subs :as subs]
    [feuerwehr-strichliste.components.drawer :refer [drawer]]
-   [feuerwehr-strichliste.components.new-item-form :refer [new-item-form]]))
+   [feuerwehr-strichliste.overview.new-item-form :refer [new-item-form]]))
 
 (defn- format-price [cents]
   (str (quot cents 100) "," (let [r (mod cents 100)] (if (< r 10) (str "0" r) r)) " €"))
@@ -15,7 +16,7 @@
    [:div.item-card-name name]
    [:div.item-card-price (format-price price)]
    [:div.item-card-meta
-    [:span.item-card-type (if (#{:food "food"} type) "Essen" "Trinken")]
+    [:span.item-card-type (if (= :food type) "Essen" "Trinken")]
     [:span.item-card-stock (str "Vorrat: " stock)]]])
 
 (defn- actions-for [role open-new-item!]
@@ -40,9 +41,9 @@
      ^{:key title} [action-button action])])
 
 (defn overview-page []
-  (let [current-user  (re-frame/subscribe [::subs/current-user])
-        items         (re-frame/subscribe [::subs/items])
-        drawer-open?  (r/atom false)]
+  (let [current-user (re-frame/subscribe [::app-subs/current-user])
+        items        (re-frame/subscribe [::subs/items])
+        drawer-open? (r/atom false)]
     (fn []
       (let [user    @current-user
             actions (actions-for (:user/role user) #(reset! drawer-open? true))]

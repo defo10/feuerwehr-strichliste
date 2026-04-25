@@ -1,11 +1,11 @@
-(ns feuerwehr-strichliste.pages.home
+(ns feuerwehr-strichliste.home.views
   (:require
    [re-frame.core :as re-frame]
-   [feuerwehr-strichliste.subs :as subs]
-   [feuerwehr-strichliste.components.user-card :refer [user-card]]
-   [feuerwehr-strichliste.components.alphabet-bar :refer [alphabet-bar]]
-   [feuerwehr-strichliste.components.search-bar :refer [search-bar]]
-   [feuerwehr-strichliste.components.pin-modal :refer [pin-modal]]))
+   [feuerwehr-strichliste.home.subs :as subs]
+   [feuerwehr-strichliste.home.user-card :refer [user-card]]
+   [feuerwehr-strichliste.home.alphabet-bar :refer [alphabet-bar]]
+   [feuerwehr-strichliste.home.search-bar :refer [search-bar]]
+   [feuerwehr-strichliste.home.pin-modal :refer [pin-modal]]))
 
 (defn home-page []
   (let [by-letter (re-frame/subscribe [::subs/users-by-letter])

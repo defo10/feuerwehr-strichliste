@@ -1,7 +1,7 @@
-(ns feuerwehr-strichliste.components.new-item-form
+(ns feuerwehr-strichliste.overview.new-item-form
   (:require [reagent.core :as r]
             [re-frame.core :as re-frame]
-            [feuerwehr-strichliste.events :as events]
+            [feuerwehr-strichliste.overview.events :as events]
             [clojure.string :as str]))
 
 (defn- format-cents [cents]
@@ -54,11 +54,7 @@
                        :name      "type"
                        :value     value
                        :checked   (= (:item/type f) value)
-                       :on-change #(swap!
-                                    form
-                                    assoc
-                                    :item/type
-                                    (keyword value))}]
+                       :on-change #(swap! form assoc :item/type (keyword value))}]
               label])]]
 
          [:div.form-field

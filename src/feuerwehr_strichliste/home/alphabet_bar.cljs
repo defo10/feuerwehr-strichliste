@@ -1,7 +1,7 @@
-(ns feuerwehr-strichliste.components.alphabet-bar
+(ns feuerwehr-strichliste.home.alphabet-bar
   (:require [reagent.core :as r]
             [re-frame.core :as re-frame]
-            [feuerwehr-strichliste.subs :as subs]))
+            [feuerwehr-strichliste.home.subs :as subs]))
 
 (def ^:private alphabet "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
@@ -21,7 +21,7 @@
    #js {:rootMargin "-10% 0px -80% 0px"}))
 
 (defn alphabet-bar []
-  (let [used         (re-frame/subscribe [::subs/used-letters])
+  (let [used          (re-frame/subscribe [::subs/used-letters])
         active-letter (r/atom nil)
         observer      (atom nil)]
     (r/create-class
