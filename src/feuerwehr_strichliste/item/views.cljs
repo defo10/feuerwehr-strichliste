@@ -2,7 +2,58 @@
   (:require [reagent.core :as r]
             [re-frame.core :as re-frame]
             [feuerwehr-strichliste.item.events :as events]
+            [feuerwehr-strichliste.item.subs :as subs]
+            [feuerwehr-strichliste.auth.events :as auth-events]
             [clojure.string :as str]))
+
+(defn- format-price [cents]
+  (str (quot cents 100) "," (let [r (mod cents 100)] (if (< r 10) (str "0" r) r)) " €"))
+
+(defn item-card [{:item/keys [id]}]
+  (let [qty-sub (re-frame/subscribe [::subs/cart-qty id])]
+    (fn [{:item/keys [id name price stock]}]
+      (let [qty        @qty-sub
+            available? (pos? stock)
+            selected?  (pos? qty)
+            at-max?    (>= qty stock)]
+        [:div.item-card {:class (str (when selected? "item-card--selected ")
+                                     (when-not available? "item-card--empty"))}
+         [:div.item-card-name name]
+         [:div.item-card-price (format-price price)]
+         [:div.item-card-controls
+          [:button.item-card-btn
+           {:disabled (or (not available?) (zero? qty))
+            :on-click #(re-frame/dispatch [::events/decrement id])}
+           "−"]
+          [:span.item-card-qty (str qty)]
+          [:button.item-card-btn
+           {:disabled (or (not available?) at-max?)
+            :on-click #(re-frame/dispatch [::events/increment id])}
+           "+"]]
+         [:div.item-card-stock (if available? (str stock " übrig") "Ausverkauft")]]))))
+
+(defn receipt-overlay [{:keys [entries total]}]
+  [:div.receipt-overlay
+   [:div.receipt
+    [:h2.receipt-title "Bestellung"]
+    [:div.receipt-entries
+     (for [{:keys [item quantity]} entries]
+       ^{:key (:item/id item)}
+       [:div.receipt-entry
+        [:span.receipt-entry-name (:item/name item)]
+        [:span.receipt-entry-qty (str "× " quantity)]
+        [:span.receipt-entry-price (format-price (* quantity (:item/price item)))]])]
+    [:div.receipt-divider]
+    [:div.receipt-total
+     [:span "Gesamt"]
+     [:span.receipt-total-amount (format-price total)]]
+    [:button.receipt-close
+     {:on-click #(re-frame/dispatch [::auth-events/sign-out])}
+     "Schließen"]]])
+
+;;
+;; New item form
+;;
 
 (defn- format-cents [cents]
   (str (quot cents 100) "," (let [r (mod cents 100)] (if (< r 10) (str "0" r) r))))

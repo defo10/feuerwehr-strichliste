@@ -444,6 +444,180 @@
      :font-weight 600
      :padding     "0 2rem"}]
 
+   [:.tab-bar
+    {:display       "flex"
+     :gap           (rem 0.25)
+     :padding       "0.75rem 1.5rem 0"
+     :background    "var(--color-surface)"
+     :border-bottom "1px solid var(--color-outline)"}]
+
+   [:.tab
+    {:padding       "0.625rem 1.5rem"
+     :font-size     (rem 1)
+     :font-weight   600
+     :border        "none"
+     :border-bottom "3px solid transparent"
+     :background    "transparent"
+     :color         "var(--color-on-surface-muted)"
+     :cursor        "pointer"
+     :transition    "color 0.15s, border-color 0.15s"}
+    ["&.tab--active" {:color        "var(--color-primary)"
+                      :border-color "var(--color-primary)"}]
+    [:&:hover {:color "var(--color-on-surface)"}]]
+
+   [:.item-grid
+    {:display               "grid"
+     :grid-template-columns "repeat(3, 1fr)"
+     :gap                   (rem 1)
+     :padding               "1.5rem"}]
+
+   [:.item-card
+    {:background     "var(--color-surface)"
+     :border         "2px solid var(--color-outline)"
+     :border-radius  "var(--radius)"
+     :box-shadow     "var(--shadow)"
+     :padding        "1rem 1.25rem"
+     :display        "flex"
+     :flex-direction "column"
+     :gap            "0.5rem"
+     :transition     "border-color 0.15s, background 0.15s"}
+    ["&.item-card--selected" {:border-color "var(--color-primary)"
+                              :background   "#fff5f5"}]
+    ["&.item-card--empty"    {:opacity "0.45"}]]
+
+   [:.item-card-name
+    {:font-size   (rem 1.1)
+     :font-weight 700
+     :line-height "1.3"}]
+
+   [:.item-card-price
+    {:font-size   (rem 0.9)
+     :color       "var(--color-on-surface-muted)"
+     :font-weight 500}]
+
+   [:.item-card-controls
+    {:display     "flex"
+     :align-items "center"
+     :gap         (rem 0.75)
+     :margin      "0.125rem 0"}]
+
+   [:.item-card-btn
+    {:width           (px 44)
+     :height          (px 44)
+     :border-radius   "50%"
+     :border          "2px solid var(--color-outline)"
+     :background      "var(--color-surface)"
+     :font-size       (rem 1.375)
+     :font-weight     300
+     :cursor          "pointer"
+     :display         "flex"
+     :align-items     "center"
+     :justify-content "center"
+     :line-height     1
+     :flex-shrink     0
+     :transition      "border-color 0.1s, background 0.1s"}
+    ["&:hover:not(:disabled)" {:border-color "var(--color-primary)"
+                               :background   "var(--color-surface-hover)"}]
+    [:&:disabled {:opacity "0.25" :cursor "not-allowed"}]]
+
+   [:.item-card-qty
+    {:font-size             (rem 1.25)
+     :font-weight           700
+     :min-width             (px 28)
+     :text-align            "center"
+     :font-variant-numeric  "tabular-nums"}]
+
+   [:.item-card-stock
+    {:font-size "0.78rem"
+     :color     "var(--color-on-surface-muted)"}]
+
+   [:.receipt-overlay
+    {:position        "fixed"
+     :inset           0
+     :background      "rgba(0,0,0,0.55)"
+     :backdrop-filter "blur(4px)"
+     :display         "flex"
+     :align-items     "center"
+     :justify-content "center"
+     :z-index         50}]
+
+   [:.receipt
+    {:background     "var(--color-surface)"
+     :border-radius  "var(--radius)"
+     :width          (px 480)
+     :max-width      "90vw"
+     :max-height     "85vh"
+     :overflow-y     "auto"
+     :box-shadow     "var(--shadow-hover)"
+     :display        "flex"
+     :flex-direction "column"
+     :gap            (rem 1)
+     :padding        "2rem"}]
+
+   [:.receipt-title
+    {:font-size   (rem 1.5)
+     :font-weight 700
+     :text-align  "center"}]
+
+   [:.receipt-entries
+    {:display        "flex"
+     :flex-direction "column"
+     :gap            "0.625rem"}]
+
+   [:.receipt-entry
+    {:display     "flex"
+     :align-items "baseline"
+     :gap         (rem 0.75)}]
+
+   [:.receipt-entry-name
+    {:font-size   (rem 1.1)
+     :font-weight 600
+     :flex        1}]
+
+   [:.receipt-entry-qty
+    {:font-size  (rem 1.1)
+     :color      "var(--color-on-surface-muted)"
+     :min-width  (px 36)
+     :text-align "center"}]
+
+   [:.receipt-entry-price
+    {:font-size             (rem 1.1)
+     :font-weight           600
+     :font-variant-numeric  "tabular-nums"
+     :text-align            "right"
+     :min-width             (px 72)}]
+
+   [:.receipt-divider
+    {:height     (px 1)
+     :background "var(--color-outline)"
+     :margin     "0.25rem 0"}]
+
+   [:.receipt-total
+    {:display         "flex"
+     :justify-content "space-between"
+     :align-items     "baseline"}
+    [:span {:font-size (rem 1.1) :font-weight 600}]]
+
+   [:.receipt-total-amount
+    {:font-size             (rem 1.5)
+     :font-weight           700
+     :font-variant-numeric  "tabular-nums"
+     :color                 "var(--color-primary)"}]
+
+   [:.receipt-close
+    {:margin-top    "0.5rem"
+     :width         "100%"
+     :padding       "0.875rem"
+     :background    "var(--color-primary)"
+     :color         "var(--color-on-primary)"
+     :border        "none"
+     :border-radius "var(--radius)"
+     :font-size     (rem 1.1)
+     :font-weight   600
+     :cursor        "pointer"
+     :transition    "opacity 0.1s"}
+    [:&:hover {:opacity 0.9}]]
+
    [:.alphabet-bar
     {:position       "fixed"
      :right          0

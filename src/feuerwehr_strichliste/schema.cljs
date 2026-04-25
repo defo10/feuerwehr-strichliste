@@ -83,10 +83,23 @@
    [:event/actor     nat-int?]
    [:event/type      [:= :auth/signed-out]]])
 
+(def CartCheckedOutEvent
+  [:map
+   [:event/id         nat-int?]
+   [:event/timestamp  string?]
+   [:event/actor      nat-int?]
+   [:event/type       [:= :cart/checked-out]]
+   [:checkout/entries [:sequential
+                       [:map
+                        [:item-id    nat-int?]
+                        [:quantity   pos-int?]
+                        [:unit-price pos-int?]]]]])
+
 (def DomainEvent
   [:multi {:dispatch :event/type}
    [:user/created           UserCreatedEvent]
    [:item/created           ItemCreatedEvent]
+   [:cart/checked-out       CartCheckedOutEvent]
    [:auth/sign-in-attempted AuthSignInAttemptedEvent]
    [:auth/signed-out        AuthSignedOutEvent]])
 

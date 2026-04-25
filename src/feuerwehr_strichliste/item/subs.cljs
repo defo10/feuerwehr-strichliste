@@ -2,6 +2,33 @@
   (:require [re-frame.core :as re-frame]))
 
 (re-frame/reg-sub
+ ::cart
+ (fn [db _]
+   (get-in db [:ui :cart])))
+
+(re-frame/reg-sub
+ ::active-tab
+ (fn [db _]
+   (get-in db [:ui :active-tab])))
+
+(re-frame/reg-sub
+ ::receipt
+ (fn [db _]
+   (get-in db [:ui :receipt])))
+
+(re-frame/reg-sub
+ ::cart-has-items?
+ :<- [::cart]
+ (fn [cart _]
+   (some pos? (vals cart))))
+
+(re-frame/reg-sub
+ ::cart-qty
+ (fn [_ _] (re-frame/subscribe [::cart]))
+ (fn [cart [_ item-id]]
+   (get cart item-id 0)))
+
+(re-frame/reg-sub
  ::items-map
  (fn [db _]
    (get-in db [:domain :items])))
@@ -14,3 +41,9 @@
         vals
         (filter #(= :active (:item/status %)))
         (sort-by :item/name))))
+
+(re-frame/reg-sub
+ ::items-by-type
+ :<- [::items]
+ (fn [items _]
+   (group-by :item/type items)))

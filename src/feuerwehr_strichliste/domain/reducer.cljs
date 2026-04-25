@@ -35,6 +35,15 @@
                      :item/status :active}
               image-key (assoc :item/image-key image-key))))
 
+(defmethod reduce-event :cart/checked-out
+  [snapshot {:keys [event/actor checkout/entries]}]
+  (reduce (fn [snap {:keys [item-id quantity unit-price]}]
+            (-> snap
+                (update-in [:balances actor] (fnil - 0) (* quantity unit-price))
+                (update-in [:items item-id :item/stock] - quantity)))
+          snapshot
+          entries))
+
 (defmethod reduce-event :auth/sign-in-attempted
   [snapshot _event]
   snapshot)

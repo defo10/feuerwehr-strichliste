@@ -67,6 +67,9 @@
      {:db       (-> db
                     (assoc :domain domain)
                     (assoc-in [:ui :current-user-id] nil)
-                    (assoc-in [:ui :pin] {:user nil :digits "" :error nil :success false}))
+                    (assoc-in [:ui :pin] {:user nil :digits "" :error nil :success false})
+                    (assoc-in [:ui :cart] {})
+                    (assoc-in [:ui :receipt] nil)
+                    (assoc-in [:ui :active-tab] :drink))
       :persist! {:event event :snapshot domain}
       :navigate :home})))

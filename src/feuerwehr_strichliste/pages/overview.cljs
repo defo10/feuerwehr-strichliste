@@ -5,19 +5,9 @@
    [feuerwehr-strichliste.subs :as app-subs]
    [feuerwehr-strichliste.auth.events :as auth-events]
    [feuerwehr-strichliste.item.subs :as item-subs]
+   [feuerwehr-strichliste.item.events :as item-events]
    [feuerwehr-strichliste.components.drawer :refer [drawer]]
-   [feuerwehr-strichliste.item.views :refer [new-item-form]]))
-
-(defn- format-price [cents]
-  (str (quot cents 100) "," (let [r (mod cents 100)] (if (< r 10) (str "0" r) r)) " €"))
-
-(defn- item-card [{:item/keys [name price stock type]}]
-  [:div.item-card
-   [:div.item-card-name name]
-   [:div.item-card-price (format-price price)]
-   [:div.item-card-meta
-    [:span.item-card-type (if (= :food type) "Essen" "Trinken")]
-    [:span.item-card-stock (str "Vorrat: " stock)]]])
+   [feuerwehr-strichliste.item.views :refer [new-item-form item-card receipt-overlay]]))
 
 (defn- actions-for [role open-new-item!]
   (let [kitchen [{:icon "➕" :color "#4CAF50" :title "Neues Essen/Trinken hinzufügen" :on-click open-new-item!}
@@ -41,23 +31,41 @@
      ^{:key title} [action-button action])])
 
 (defn overview-page []
-  (let [current-user (re-frame/subscribe [::app-subs/current-user])
-        items        (re-frame/subscribe [::item-subs/items])
-        drawer-open? (r/atom false)]
+  (let [current-user  (re-frame/subscribe [::app-subs/current-user])
+        active-tab    (re-frame/subscribe [::item-subs/active-tab])
+        items-by-type (re-frame/subscribe [::item-subs/items-by-type])
+        has-items?    (re-frame/subscribe [::item-subs/cart-has-items?])
+        receipt       (re-frame/subscribe [::item-subs/receipt])
+        drawer-open?  (r/atom false)]
     (fn []
       (let [user    @current-user
+            tab     @active-tab
             actions (actions-for (:user/role user) #(reset! drawer-open? true))]
-        [:div
-         [:nav.top-nav
-          [:span.top-nav-name (:user/name user)]
-          [:button.top-nav-logout
-           {:on-click #(re-frame/dispatch [::auth-events/sign-out])}
-           "Fertig"]]
-         (when (seq actions)
-           [action-bar actions])
-         [:div.item-grid
-          (for [item @items]
-            ^{:key (:item/id item)} [item-card item])]
+        [:<>
+         [:div
+          [:nav.top-nav
+           [:span.top-nav-name (:user/name user)]
+           [:button.top-nav-logout
+            {:on-click #(if @has-items?
+                          (re-frame/dispatch [::item-events/checkout])
+                          (re-frame/dispatch [::auth-events/sign-out]))}
+            "Fertig"]]
+          (when (seq actions)
+            [action-bar actions])
+          [:div.tab-bar
+           [:button.tab
+            {:class    (when (= tab :drink) "tab--active")
+             :on-click #(re-frame/dispatch [::item-events/set-active-tab :drink])}
+            "Getränke"]
+           [:button.tab
+            {:class    (when (= tab :food) "tab--active")
+             :on-click #(re-frame/dispatch [::item-events/set-active-tab :food])}
+            "Essen"]]
+          [:div.item-grid
+           (for [item (get @items-by-type tab [])]
+             ^{:key (:item/id item)} [item-card item])]]
+         (when @receipt
+           [receipt-overlay @receipt])
          [drawer {:open?    @drawer-open?
                   :on-close #(reset! drawer-open? false)
                   :title    "Neues Essen/Trinken"}
