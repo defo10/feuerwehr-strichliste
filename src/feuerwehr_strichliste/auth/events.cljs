@@ -1,14 +1,9 @@
-(ns feuerwehr-strichliste.home.events
+(ns feuerwehr-strichliste.auth.events
   (:require
    [re-frame.core :as re-frame]
    [feuerwehr-strichliste.domain.reducer :as reducer]
    ["bcryptjs" :as bcrypt]
    [day8.re-frame.tracing :refer-macros [fn-traced]]))
-
-(re-frame/reg-event-db
- ::set-search-query
- (fn-traced [db [_ query]]
-   (assoc-in db [:ui :search-query] query)))
 
 (re-frame/reg-event-db
  ::open-pin-modal
@@ -58,3 +53,20 @@
                           (assoc-in [:ui :pin :digits] "")
                           (assoc-in [:ui :pin :error] "Falsche PIN"))
             :persist! {:event event :snapshot domain}}))))))
+
+(re-frame/reg-event-fx
+ ::sign-out
+ (fn-traced [{:keys [db]} _]
+   (let [{:keys [domain event]} (reducer/apply-event
+                                  (:domain db)
+                                  (fn [id]
+                                    {:event/type      :auth/signed-out
+                                     :event/id        id
+                                     :event/timestamp (.toISOString (js/Date.))
+                                     :event/actor     (get-in db [:ui :current-user-id])}))]
+     {:db       (-> db
+                    (assoc :domain domain)
+                    (assoc-in [:ui :current-user-id] nil)
+                    (assoc-in [:ui :pin] {:user nil :digits "" :error nil :success false}))
+      :persist! {:event event :snapshot domain}
+      :navigate :home})))

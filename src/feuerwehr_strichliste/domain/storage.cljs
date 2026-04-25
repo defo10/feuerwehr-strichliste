@@ -1,4 +1,4 @@
-(ns feuerwehr-strichliste.storage
+(ns feuerwehr-strichliste.domain.storage
   (:require [konserve.core :as k]
             [konserve.indexeddb]
             [cljs.core.async :refer [go <!]]

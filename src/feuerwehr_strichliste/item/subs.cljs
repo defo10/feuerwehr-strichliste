@@ -1,4 +1,4 @@
-(ns feuerwehr-strichliste.overview.subs
+(ns feuerwehr-strichliste.item.subs
   (:require [re-frame.core :as re-frame]))
 
 (re-frame/reg-sub

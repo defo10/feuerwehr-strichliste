@@ -1,7 +1,7 @@
-(ns feuerwehr-strichliste.home.alphabet-bar
+(ns feuerwehr-strichliste.user.alphabet-bar
   (:require [reagent.core :as r]
             [re-frame.core :as re-frame]
-            [feuerwehr-strichliste.home.subs :as subs]))
+            [feuerwehr-strichliste.user.subs :as subs]))
 
 (def ^:private alphabet "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 

@@ -1,7 +1,7 @@
-(ns feuerwehr-strichliste.overview.new-item-form
+(ns feuerwehr-strichliste.item.views
   (:require [reagent.core :as r]
             [re-frame.core :as re-frame]
-            [feuerwehr-strichliste.overview.events :as events]
+            [feuerwehr-strichliste.item.events :as events]
             [clojure.string :as str]))
 
 (defn- format-cents [cents]

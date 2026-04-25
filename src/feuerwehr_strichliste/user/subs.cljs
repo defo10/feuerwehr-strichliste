@@ -1,4 +1,4 @@
-(ns feuerwehr-strichliste.home.subs
+(ns feuerwehr-strichliste.user.subs
   (:require [re-frame.core :as re-frame]))
 
 (re-frame/reg-sub
@@ -10,11 +10,6 @@
  ::search-query
  (fn [db _]
    (get-in db [:ui :search-query])))
-
-(re-frame/reg-sub
- ::pin-state
- (fn [db _]
-   (get-in db [:ui :pin])))
 
 (re-frame/reg-sub
  ::users

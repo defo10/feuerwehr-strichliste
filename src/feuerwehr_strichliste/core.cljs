@@ -8,10 +8,11 @@
    [feuerwehr-strichliste.subs :as subs]
    [feuerwehr-strichliste.config :as config]
    [feuerwehr-strichliste.styles :as styles]
-   [feuerwehr-strichliste.storage :as storage]
+   [feuerwehr-strichliste.domain.storage :as storage]
+   [feuerwehr-strichliste.domain.effects]
    [feuerwehr-strichliste.components.error-overlay :refer [error-overlay]]
-   [feuerwehr-strichliste.home.views :refer [home-page]]
-   [feuerwehr-strichliste.overview.views :refer [overview-page]]))
+   [feuerwehr-strichliste.pages.home :refer [home-page]]
+   [feuerwehr-strichliste.pages.overview :refer [overview-page]]))
 
 (defmulti panels identity)
 (defmethod panels :default [] [:div "No panel found for this route."])

@@ -1,6 +1,5 @@
-(ns feuerwehr-strichliste.home.db)
+(ns feuerwehr-strichliste.auth.db)
 
 (def default-ui
   {:current-user-id nil
-   :search-query    ""
    :pin             {:user nil :digits "" :error nil :success false}})

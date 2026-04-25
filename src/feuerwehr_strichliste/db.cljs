@@ -1,7 +1,8 @@
 (ns feuerwehr-strichliste.db
   (:require [feuerwehr-strichliste.schema :as schema]
             [feuerwehr-strichliste.domain.reducer :as reducer]
-            [feuerwehr-strichliste.home.db :as home-db]))
+            [feuerwehr-strichliste.auth.db :as auth-db]
+            [feuerwehr-strichliste.user.db :as user-db]))
 
 (defn- seed-events []
   (map (fn [user]
@@ -18,4 +19,4 @@
                      (:domain (reducer/apply-event domain #(assoc event :event/id %))))
                    reducer/empty-snapshot
                    (seed-events))
-   :ui     home-db/default-ui})
+   :ui     (merge auth-db/default-ui user-db/default-ui)})

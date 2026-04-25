@@ -1,12 +1,12 @@
-(ns feuerwehr-strichliste.overview.views
+(ns feuerwehr-strichliste.pages.overview
   (:require
    [reagent.core :as r]
    [re-frame.core :as re-frame]
    [feuerwehr-strichliste.subs :as app-subs]
-   [feuerwehr-strichliste.events :as events]
-   [feuerwehr-strichliste.overview.subs :as subs]
+   [feuerwehr-strichliste.auth.events :as auth-events]
+   [feuerwehr-strichliste.item.subs :as item-subs]
    [feuerwehr-strichliste.components.drawer :refer [drawer]]
-   [feuerwehr-strichliste.overview.new-item-form :refer [new-item-form]]))
+   [feuerwehr-strichliste.item.views :refer [new-item-form]]))
 
 (defn- format-price [cents]
   (str (quot cents 100) "," (let [r (mod cents 100)] (if (< r 10) (str "0" r) r)) " €"))
@@ -42,7 +42,7 @@
 
 (defn overview-page []
   (let [current-user (re-frame/subscribe [::app-subs/current-user])
-        items        (re-frame/subscribe [::subs/items])
+        items        (re-frame/subscribe [::item-subs/items])
         drawer-open? (r/atom false)]
     (fn []
       (let [user    @current-user
@@ -51,7 +51,7 @@
          [:nav.top-nav
           [:span.top-nav-name (:user/name user)]
           [:button.top-nav-logout
-           {:on-click #(re-frame/dispatch [::events/sign-out])}
+           {:on-click #(re-frame/dispatch [::auth-events/sign-out])}
            "Fertig"]]
          (when (seq actions)
            [action-bar actions])

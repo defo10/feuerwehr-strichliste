@@ -1,0 +1,27 @@
+(ns feuerwehr-strichliste.domain.effects
+  (:require [re-frame.core :as re-frame]
+            [konserve.core :as k]
+            [cljs.core.async :refer [go <!]]
+            [feuerwehr-strichliste.domain.storage :as storage]
+            [feuerwehr-strichliste.config :as config]))
+
+(re-frame/reg-fx
+ :persist!
+ (fn [{:keys [event snapshot]}]
+   (go
+     (try
+       (<! (k/append @storage/store :event-log event))
+       (<! (k/assoc-in @storage/store [:snapshot] snapshot))
+       (catch :default e
+         (re-frame/dispatch [:error :errors/persist-failed (.-message e)])
+         (when config/debug?
+           (js/setTimeout #(throw e) 0)))))))
+
+(re-frame/reg-fx
+ :persist-image!
+ (fn [{:keys [item-id blob]}]
+   (go
+     (try
+       (<! (k/assoc-in @storage/store [:item-images item-id] blob))
+       (catch :default e
+         (re-frame/dispatch [:error :errors/persist-failed (.-message e)]))))))

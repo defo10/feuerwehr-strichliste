@@ -1,6 +1,6 @@
-(ns feuerwehr-strichliste.home.pin-modal
+(ns feuerwehr-strichliste.auth.views
   (:require [re-frame.core :as re-frame]
-            [feuerwehr-strichliste.home.events :as events]))
+            [feuerwehr-strichliste.auth.events :as events]))
 
 (defn- pin-dots [digits error]
   [:div.pin-dots {:class (when error "shaking")}
@@ -23,5 +23,5 @@
     [:button.pin-modal-close {:on-click #(re-frame/dispatch [::events/close-pin-modal])} "×"]
     [:h2.pin-modal-title (:user/name user)]
     [pin-dots digits error]
-    [:p.pin-error (or error " ")]
+    [:p.pin-error (or error " ")]
     [keypad]]])
