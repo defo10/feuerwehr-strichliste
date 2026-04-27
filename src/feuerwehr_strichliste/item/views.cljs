@@ -9,10 +9,15 @@
 (defn format-price [cents]
   (str (quot cents 100) "," (let [r (mod cents 100)] (if (< r 10) (str "0" r) r)) " €"))
 
-(defn item-card [{:item/keys [id]}]
-  (let [qty-sub   (re-frame/subscribe [::subs/cart-qty id])
-        image-sub (re-frame/subscribe [::subs/item-image-url id])]
-    (fn [{:item/keys [id name price stock]}]
+;;
+;; Item card
+;;
+
+(defn item-card [{:item/keys [id] :as item}]
+  (let [qty-sub     (re-frame/subscribe [::subs/cart-qty id])
+        image-sub   (re-frame/subscribe [::subs/item-image-url id])
+        can-manage? (re-frame/subscribe [::subs/can-manage-items?])]
+    (fn [{:item/keys [id name price stock] :as item}]
       (let [qty        @qty-sub
             image-url  @image-sub
             available? (pos? stock)
@@ -20,6 +25,11 @@
             at-max?    (>= qty stock)]
         [:div.item-card {:class (str (when selected? "item-card--selected ")
                                      (when-not available? "item-card--empty"))}
+         (when @can-manage?
+           [:div.item-card-actions
+            [:button.item-card-edit
+             {:on-click #(re-frame/dispatch [::events/edit-item item])}
+             "✏️"]])
          (when image-url
            [:img.item-card-image {:src image-url :alt name}])
          [:div.item-card-header
@@ -37,6 +47,10 @@
            {:disabled (or (not available?) at-max?)
             :on-click #(re-frame/dispatch [::events/increment id])}
            "+"]]]))))
+
+;;
+;; Receipt
+;;
 
 (defn receipt-overlay [{:keys [entries total]}]
   [:div.receipt-overlay
@@ -64,7 +78,7 @@
       "Okay"]]]])
 
 ;;
-;; New item form
+;; Item form (shared between new and edit)
 ;;
 
 (defn- format-cents [cents]
@@ -101,9 +115,10 @@
                        0.85))))
     (set! (.-src img) tmp-url)))
 
-(defn new-item-form [_on-close]
-  (let [form (r/atom {:item/type :food :item/name "" :item/price 0 :item/stock 0})]
-    (fn [on-close]
+(defn- item-form [{:keys [initial existing-image-url submit-label on-submit]}]
+  (let [form (r/atom (merge {:item/type :food :item/name "" :item/price 0 :item/stock 0}
+                            (select-keys initial [:item/type :item/name :item/price :item/stock])))]
+    (fn [{:keys [existing-image-url submit-label on-submit]}]
       (let [f @form]
         [:form.drawer-form {:on-submit #(.preventDefault %)}
 
@@ -136,7 +151,7 @@
                                   :capture   "environment"
                                   :on-change #(when-let [file (-> % .-target .-files (aget 0))]
                                                 (compress-image! file form))}]
-          (when-let [url (:image-preview f)]
+          (when-let [url (or (:image-preview f) existing-image-url)]
             [:img.image-preview {:src url :alt "Vorschau"}])]
 
          [:div.form-field
@@ -187,11 +202,26 @@
             :disabled (not (valid? f))
             :on-click (fn [e]
                         (.preventDefault e)
-                        (re-frame/dispatch [::events/item-create
-                                            {:item/type  (:item/type f)
-                                             :item/name  (:item/name f)
-                                             :item/price (:item/price f)
-                                             :item/stock (:item/stock f)
-                                             :image      (:image f)}])
-                        (on-close))}
-           "Hinzufügen"]]]))))
+                        (on-submit {:item/type  (:item/type f)
+                                    :item/name  (:item/name f)
+                                    :item/price (:item/price f)
+                                    :item/stock (:item/stock f)
+                                    :image      (:image f)}))}
+           submit-label]]]))))
+
+(defn new-item-form [on-close]
+  [item-form {:submit-label "Hinzufügen"
+              :on-submit    (fn [data]
+                              (re-frame/dispatch [::events/item-create data])
+                              (on-close))}])
+
+(defn edit-item-form [item on-close]
+  (let [image-sub (re-frame/subscribe [::subs/item-image-url (:item/id item)])]
+    (fn [item on-close]
+      [item-form {:initial            (select-keys item [:item/type :item/name :item/price :item/stock])
+                  :existing-image-url @image-sub
+                  :submit-label       "Speichern"
+                  :on-submit          (fn [data]
+                                        (re-frame/dispatch [::events/item-update
+                                                            (assoc data :item/id (:item/id item))])
+                                        (on-close))}])))

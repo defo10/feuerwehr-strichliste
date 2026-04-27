@@ -13,11 +13,6 @@
    (get-in db [:ui :error])))
 
 (re-frame/reg-sub
- ::current-user-id
- (fn [db _]
-   (get-in db [:ui :current-user-id])))
-
-(re-frame/reg-sub
  ::current-user
  (fn [db _]
    (get-in db [:domain :users (get-in db [:ui :current-user-id])])))

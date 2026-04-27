@@ -95,10 +95,23 @@
                         [:quantity   pos-int?]
                         [:unit-price pos-int?]]]]])
 
+(def ItemUpdatedEvent
+  [:map
+   [:event/id        nat-int?]
+   [:event/timestamp string?]
+   [:event/actor     nat-int?]
+   [:event/type      [:= :item/updated]]
+   [:item/id         nat-int?]
+   [:item/type       [:enum :drink :food]]
+   [:item/name       string?]
+   [:item/price      pos-int?]
+   [:item/stock      nat-int?]])
+
 (def DomainEvent
   [:multi {:dispatch :event/type}
    [:user/created           UserCreatedEvent]
    [:item/created           ItemCreatedEvent]
+   [:item/updated           ItemUpdatedEvent]
    [:cart/checked-out       CartCheckedOutEvent]
    [:auth/sign-in-attempted AuthSignInAttemptedEvent]
    [:auth/signed-out        AuthSignedOutEvent]])

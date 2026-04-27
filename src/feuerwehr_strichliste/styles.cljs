@@ -485,6 +485,21 @@
                               :background   "#fff5f5"}]
     ["&.item-card--empty"    {:opacity "0.45"}]]
 
+   [:.item-card-actions
+    {:display         "flex"
+     :justify-content "flex-end"}]
+
+   [:.item-card-edit
+    {:background "none"
+     :border     "none"
+     :cursor     "pointer"
+     :padding    0
+     :font-size  (rem 0.875)
+     :line-height 1
+     :color      "var(--color-on-surface-muted)"
+     :transition "color 0.1s"}
+    [:&:hover {:color "var(--color-on-surface)"}]]
+
    [:.item-card-image
     {:width         "100%"
      :height        (px 120)

@@ -39,6 +39,46 @@
                 {:load-item-images! item-ids}))))
 
 (re-frame/reg-event-db
+ ::edit-item
+ (fn-traced [db [_ item]]
+            (assoc-in db [:ui :editing-item] item)))
+
+(re-frame/reg-event-db
+ ::close-edit
+ (fn-traced [db _]
+            (assoc-in db [:ui :editing-item] nil)))
+
+(re-frame/reg-event-fx
+ ::item-update
+ (fn-traced [{:keys [db]} [_ {:item/keys [id type name price stock] :keys [image]}]]
+            (let [user-id (get-in db [:ui :current-user-id])
+                  role    (get-in db [:domain :users user-id :user/role])]
+              (if (permissions/can? role :manage-items)
+                (let [{:keys [domain event]} (reducer/apply-event
+                                              (:domain db)
+                                              (fn [ev-id]
+                                                {:event/type      :item/updated
+                                                 :event/id        ev-id
+                                                 :event/timestamp (.toISOString (js/Date.))
+                                                 :event/actor     user-id
+                                                 :item/id         id
+                                                 :item/type       type
+                                                 :item/name       name
+                                                 :item/price      price
+                                                 :item/stock      stock}))
+                      base (assoc db :domain domain)
+                      db'  (if image
+                             ; revoke the old URL before replacing it — object URLs hold the blob
+                             ; in memory until explicitly revoked or the page unloads
+                             (do (some-> (get-in base [:ui :item-images id]) js/URL.revokeObjectURL)
+                                 (assoc-in base [:ui :item-images id] (js/URL.createObjectURL image)))
+                             base)]
+                  (merge {:db       db'
+                          :persist! {:event event :snapshot domain}}
+                         (when image {:persist-image! {:item-id id :blob image}})))
+                {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
+
+(re-frame/reg-event-db
  ::set-active-tab
  (fn-traced [db [_ tab]]
             (assoc-in db [:ui :active-tab] tab)))

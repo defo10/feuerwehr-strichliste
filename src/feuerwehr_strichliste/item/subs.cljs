@@ -1,5 +1,7 @@
 (ns feuerwehr-strichliste.item.subs
-  (:require [re-frame.core :as re-frame]))
+  (:require [re-frame.core :as re-frame]
+            [feuerwehr-strichliste.subs :as app-subs]
+            [feuerwehr-strichliste.domain.permissions :as permissions]))
 
 (re-frame/reg-sub
  ::cart
@@ -27,6 +29,17 @@
  (fn [_ _] (re-frame/subscribe [::cart]))
  (fn [cart [_ item-id]]
    (get cart item-id 0)))
+
+(re-frame/reg-sub
+ ::editing-item
+ (fn [db _]
+   (get-in db [:ui :editing-item])))
+
+(re-frame/reg-sub
+ ::can-manage-items?
+ :<- [::app-subs/current-user]
+ (fn [user _]
+   (permissions/can? (:user/role user) :manage-items)))
 
 (re-frame/reg-sub
  ::items-map

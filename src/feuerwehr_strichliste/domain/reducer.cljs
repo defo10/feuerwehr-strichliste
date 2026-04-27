@@ -19,6 +19,14 @@
              :user/pin-hash pin-hash
              :user/status   :active}))
 
+(defmethod reduce-event :item/updated
+  [snapshot {:keys [item/id item/type item/name item/price item/stock]}]
+  (update-in snapshot [:items id]
+             merge {:item/type  type
+                    :item/name  name
+                    :item/price price
+                    :item/stock stock}))
+
 (defmethod reduce-event :item/created
   [snapshot {:keys [event/id
                     item/type
