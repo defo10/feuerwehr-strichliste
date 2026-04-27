@@ -20,9 +20,14 @@
 ;; Shared form
 ;;
 
+(defn- valid-pin? [pin mode]
+  (if (= mode :edit)
+    (or (str/blank? pin) (re-matches #"\d{4}" pin))
+    (re-matches #"\d{4}" pin)))
+
 (defn- valid? [{:keys [name pin]} mode]
   (and (not (str/blank? name))
-       (or (= mode :edit) (not (str/blank? pin)))))
+       (valid-pin? pin mode)))
 
 (defn- user-form [{:keys [initial fields mode submit-label on-submit]}]
   (let [form (r/atom (merge {:name "" :role :member :status :active :pin ""}
@@ -55,12 +60,17 @@
                ^{:key k} [:option {:value (name k)} label])]])
 
          [:div.form-field
-          [:label (if (= mode :create) "PIN"
-                    [:<> "Neuer PIN" [:span.optional-hint " (leer lassen = unverändert)"]])]
+          [:label (if (= mode :create) "PIN (4 Ziffern)"
+                    [:<> "Neuer PIN" [:span.optional-hint " (4 Ziffern, leer lassen = unverändert)"]])]
           [:input {:type        "password"
-                   :placeholder (when (= mode :edit) "••••")
+                   :input-mode  "numeric"
+                   :placeholder "••••"
+                   :max-length  4
                    :value       (:pin f)
-                   :on-change   #(swap! form assoc :pin (.. % -target -value))}]]
+                   :on-change   (fn [e]
+                                  (let [v (str/replace (.. e -target -value) #"\D" "")]
+                                    (when (<= (count v) 4)
+                                      (swap! form assoc :pin v))))}]]
 
          [:div.form-actions
           [:button.form-submit

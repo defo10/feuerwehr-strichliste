@@ -682,10 +682,19 @@
      :grid-template-columns "1fr 120px 80px 40px"
      :gap                   (rem 1)
      :padding               "0.5rem 0"
-     :font-size             (rem 0.8)
-     :font-weight           600
-     :color                 "var(--color-on-surface-muted)"
      :border-bottom         "2px solid var(--color-outline)"}]
+
+   [:.col-header
+    {:background    "none"
+     :border        "none"
+     :padding       0
+     :font-size     (rem 0.8)
+     :font-weight   600
+     :color         "var(--color-on-surface-muted)"
+     :cursor        "pointer"
+     :text-align    "left"
+     :white-space   "nowrap"}
+    [:&:hover {:color "var(--color-on-surface)"}]]
 
    [:.users-table-row
     {:display               "grid"
