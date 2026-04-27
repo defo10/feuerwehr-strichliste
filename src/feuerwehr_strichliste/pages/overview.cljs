@@ -3,17 +3,22 @@
    [reagent.core :as r]
    [re-frame.core :as re-frame]
    [feuerwehr-strichliste.subs :as app-subs]
+   [feuerwehr-strichliste.events :as events]
    [feuerwehr-strichliste.auth.events :as auth-events]
    [feuerwehr-strichliste.item.subs :as item-subs]
    [feuerwehr-strichliste.item.events :as item-events]
+   [feuerwehr-strichliste.user.subs :as user-subs]
+   [feuerwehr-strichliste.user.events :as user-events]
    [feuerwehr-strichliste.components.drawer :refer [drawer]]
-   [feuerwehr-strichliste.item.views :refer [new-item-form edit-item-form item-card receipt-overlay format-price]]))
+   [feuerwehr-strichliste.item.views :refer [new-item-form edit-item-form item-card receipt-overlay format-price]]
+   [feuerwehr-strichliste.user.views :refer [edit-user-form]]))
 
 (defn- actions-for [role open-new-item!]
   (let [kitchen [{:icon "➕" :color "#4CAF50" :title "Neues Essen/Trinken hinzufügen" :on-click open-new-item!}
                  {:icon "✏️"  :color "#2196F3" :title "Essen/Trinken bearbeiten"}
                  {:icon "📦" :color "#FF9800" :title "Bestand bearbeiten"}]
-        admin   [{:icon "👥" :color "#9C27B0" :title "Nutzer verwalten"}
+        admin   [{:icon "👥" :color "#9C27B0" :title "Nutzer verwalten"
+                  :on-click #(re-frame/dispatch [::events/navigate :users])}
                  {:icon "💰" :color "#009688" :title "Einzahlungen überblicken"}]]
     (case role
       :kitchen kitchen
@@ -38,6 +43,7 @@
         cart-total    (re-frame/subscribe [::item-subs/cart-total])
         receipt       (re-frame/subscribe [::item-subs/receipt])
         editing-item  (re-frame/subscribe [::item-subs/editing-item])
+        profile-open? (re-frame/subscribe [::user-subs/profile-open?])
         drawer-open?  (r/atom false)]
     (fn []
       (let [user    @current-user
@@ -46,7 +52,11 @@
         [:<>
          [:div
           [:nav.top-nav
-           [:span.top-nav-name (:user/name user)]
+           [:div.top-nav-identity
+            [:span.top-nav-name (:user/name user)]
+            [:button.top-nav-edit-profile
+             {:on-click #(re-frame/dispatch [::user-events/open-profile])}
+             "BEARBEITEN"]]
            [:button.top-nav-logout
             {:on-click #(if @has-items?
                           (re-frame/dispatch [::item-events/show-receipt])
@@ -79,4 +89,10 @@
                   :title    "Essen/Trinken bearbeiten"}
           (when @editing-item
             [edit-item-form @editing-item
-             #(re-frame/dispatch [::item-events/close-edit])])]]))))
+             #(re-frame/dispatch [::item-events/close-edit])])]
+         [drawer {:open?    @profile-open?
+                  :on-close #(re-frame/dispatch [::user-events/close-profile])
+                  :title    "Mein Profil"}
+          (when @profile-open?
+            [edit-user-form user :self
+             #(re-frame/dispatch [::user-events/close-profile])])]]))))

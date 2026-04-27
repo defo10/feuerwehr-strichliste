@@ -10,6 +10,13 @@
 
 (defmulti reduce-event (fn [_snapshot event] (:event/type event)))
 
+(defmethod reduce-event :user/updated
+  [snapshot {:keys [user/id user/name user/role user/status user/pin-hash]}]
+  (cond-> (update-in snapshot [:users id] merge {:user/name   name
+                                                  :user/role   role
+                                                  :user/status status})
+    pin-hash (assoc-in [:users id :user/pin-hash] pin-hash)))
+
 (defmethod reduce-event :user/created
   [snapshot {:keys [event/id user/name user/role user/pin-hash]}]
   (assoc-in snapshot [:users id]

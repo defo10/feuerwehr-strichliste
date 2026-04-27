@@ -107,9 +107,22 @@
    [:item/price      pos-int?]
    [:item/stock      nat-int?]])
 
+(def UserUpdatedEvent
+  [:map
+   [:event/id        nat-int?]
+   [:event/timestamp string?]
+   [:event/actor     nat-int?]
+   [:event/type      [:= :user/updated]]
+   [:user/id         nat-int?]
+   [:user/name       string?]
+   [:user/role       [:enum :member :kitchen :admin]]
+   [:user/status     [:enum :active :inactive :suspended]]
+   [:user/pin-hash   {:optional true} string?]])
+
 (def DomainEvent
   [:multi {:dispatch :event/type}
    [:user/created           UserCreatedEvent]
+   [:user/updated           UserUpdatedEvent]
    [:item/created           ItemCreatedEvent]
    [:item/updated           ItemUpdatedEvent]
    [:cart/checked-out       CartCheckedOutEvent]

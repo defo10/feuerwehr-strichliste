@@ -314,9 +314,25 @@
      :border-bottom   "1px solid var(--color-outline)"
      :z-index         10}]
 
+   [:.top-nav-identity
+    {:display     "flex"
+     :align-items "baseline"
+     :gap         (rem 0.5)}]
+
    [:.top-nav-name
     {:font-weight 600
      :font-size   (rem 1.1)}]
+
+   [:.top-nav-edit-profile
+    {:background  "none"
+     :border      "none"
+     :font-size   (rem 0.7)
+     :font-weight 700
+     :letter-spacing "0.05em"
+     :color       "var(--color-on-surface-muted)"
+     :cursor      "pointer"
+     :padding     0}
+    [:&:hover {:color "var(--color-on-surface)"}]]
 
    [:.action-bar
     {:display    "flex"
@@ -348,6 +364,16 @@
      :text-align  "left"
      :color       "#ffffff"
      :line-height 1.3}]
+
+   [:.top-nav-back
+    {:background  "none"
+     :border      "none"
+     :font-size   (rem 1.25)
+     :font-weight 400
+     :color       "var(--color-on-surface)"
+     :cursor      "pointer"
+     :padding     0}
+    [:&:hover {:opacity 0.7}]]
 
    [:.top-nav-logout
     {:background  "none"
@@ -647,6 +673,53 @@
      :cursor        "pointer"
      :transition    "opacity 0.1s"}
     [:&:hover {:opacity 0.9}]]
+
+   [:.users-table
+    {:padding "0 1.5rem"}]
+
+   [:.users-table-header
+    {:display               "grid"
+     :grid-template-columns "1fr 120px 80px 40px"
+     :gap                   (rem 1)
+     :padding               "0.5rem 0"
+     :font-size             (rem 0.8)
+     :font-weight           600
+     :color                 "var(--color-on-surface-muted)"
+     :border-bottom         "2px solid var(--color-outline)"}]
+
+   [:.users-table-row
+    {:display               "grid"
+     :grid-template-columns "1fr 120px 80px 40px"
+     :gap                   (rem 1)
+     :align-items           "center"
+     :padding               "0.75rem 0"
+     :border-bottom         "1px solid var(--color-outline)"}]
+
+   [:.users-table-name
+    {:font-weight 500}]
+
+   [:.role-select
+    {:font-size     (rem 0.875)
+     :padding       "0.25rem 0.5rem"
+     :border        "1px solid var(--color-outline)"
+     :border-radius "var(--radius)"
+     :background    "var(--color-surface)"
+     :color         "var(--color-on-surface)"
+     :cursor        "pointer"
+     :width         "100%"}
+    [:&:focus {:outline      "none"
+               :border-color "var(--color-primary)"}]]
+
+   [:.role-label
+    {:font-size (rem 0.875)
+     :color     "var(--color-on-surface-muted)"}]
+
+   [:.status-badge
+    {:font-size   (rem 0.8)
+     :font-weight 600}
+    ["&.active"    {:color "green"}]
+    ["&.inactive"  {:color "var(--color-on-surface-muted)"}]
+    ["&.suspended" {:color "var(--color-primary)"}]]
 
    [:.receipt-edit
     {:padding       "0.875rem 1.25rem"
