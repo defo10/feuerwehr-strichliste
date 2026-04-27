@@ -467,7 +467,7 @@
 
    [:.item-grid
     {:display               "grid"
-     :grid-template-columns "repeat(auto-fit, minmax(180px, 1fr))"
+     :grid-template-columns "repeat(auto-fill, minmax(180px, 1fr))"
      :gap                   (rem 1)
      :padding               "1.5rem"}]
 
@@ -486,10 +486,9 @@
     ["&.item-card--empty"    {:opacity "0.45"}]]
 
    [:.item-card-header
-    {:display         "flex"
-     :align-items     "baseline"
-     :justify-content "space-between"
-     :gap             (rem 0.75)}]
+    {:display        "flex"
+     :flex-direction "column"
+     :gap            "0.25rem"}]
 
    [:.item-card-name
     {:font-size   (rem 1.1)
