@@ -485,6 +485,13 @@
                               :background   "#fff5f5"}]
     ["&.item-card--empty"    {:opacity "0.45"}]]
 
+   [:.item-card-image
+    {:width         "100%"
+     :height        (px 120)
+     :object-fit    "cover"
+     :border-radius (px 8)
+     :display       "block"}]
+
    [:.item-card-header
     {:display        "flex"
      :flex-direction "column"

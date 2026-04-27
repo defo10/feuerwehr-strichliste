@@ -34,6 +34,17 @@
    (get-in db [:domain :items])))
 
 (re-frame/reg-sub
+ ::item-images
+ (fn [db _]
+   (get-in db [:ui :item-images])))
+
+(re-frame/reg-sub
+ ::item-image-url
+ :<- [::item-images]
+ (fn [images [_ item-id]]
+   (get images item-id)))
+
+(re-frame/reg-sub
  ::items
  :<- [::items-map]
  (fn [items-map _]

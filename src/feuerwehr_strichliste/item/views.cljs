@@ -10,14 +10,18 @@
   (str (quot cents 100) "," (let [r (mod cents 100)] (if (< r 10) (str "0" r) r)) " €"))
 
 (defn item-card [{:item/keys [id]}]
-  (let [qty-sub (re-frame/subscribe [::subs/cart-qty id])]
+  (let [qty-sub   (re-frame/subscribe [::subs/cart-qty id])
+        image-sub (re-frame/subscribe [::subs/item-image-url id])]
     (fn [{:item/keys [id name price stock]}]
       (let [qty        @qty-sub
+            image-url  @image-sub
             available? (pos? stock)
             selected?  (pos? qty)
             at-max?    (>= qty stock)]
         [:div.item-card {:class (str (when selected? "item-card--selected ")
                                      (when-not available? "item-card--empty"))}
+         (when image-url
+           [:img.item-card-image {:src image-url :alt name}])
          [:div.item-card-header
           [:span.item-card-name name]
           [:span.item-card-meta (if available?

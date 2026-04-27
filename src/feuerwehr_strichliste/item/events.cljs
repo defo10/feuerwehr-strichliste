@@ -1,9 +1,42 @@
 (ns feuerwehr-strichliste.item.events
   (:require
    [re-frame.core :as re-frame]
+   [konserve.core :as k]
+   [cljs.core.async :as async :refer [go <!]]
    [feuerwehr-strichliste.domain.reducer :as reducer]
    [feuerwehr-strichliste.domain.permissions :as permissions]
+   [feuerwehr-strichliste.domain.storage :as storage]
    [day8.re-frame.tracing :refer-macros [fn-traced]]))
+
+(defn- item-image-entry [id]
+  (go (when-let [blob (<! (k/get-in @storage/store [:item-images id]))]
+        [id (js/URL.createObjectURL blob)])))
+
+(re-frame/reg-fx
+ :load-item-images!
+ (fn [item-ids]
+   (go (->> item-ids
+            (map item-image-entry)
+            async/merge
+            (async/into [])
+            <!
+            (keep identity)
+            (into {})
+            (conj [::images-loaded])
+            re-frame/dispatch))))
+
+(re-frame/reg-event-db
+ ::images-loaded
+ (fn-traced [db [_ url-map]]
+            (assoc-in db [:ui :item-images] url-map)))
+
+(re-frame/reg-event-fx
+ ::load-images
+ (fn-traced [{:keys [db]} _]
+            (let [item-ids (->> (vals (get-in db [:domain :items]))
+                                (keep :item/image-key))]
+              (when (seq item-ids)
+                {:load-item-images! item-ids}))))
 
 (re-frame/reg-event-db
  ::set-active-tab
@@ -86,8 +119,12 @@
                                                         :item/name       name
                                                         :item/price      price
                                                         :item/stock      stock}
-                                                       (when image {:item/image-key id}))))]
-                  (merge {:db       (assoc db :domain domain)
+                                                       (when image {:item/image-key id}))))
+                      item-id (:event/id event)
+                      db'     (cond-> (assoc db :domain domain)
+                                image (assoc-in [:ui :item-images item-id]
+                                               (js/URL.createObjectURL image)))]
+                  (merge {:db       db'
                           :persist! {:event event :snapshot domain}}
-                         (when image {:persist-image! {:item-id (:event/id event) :blob image}})))
+                         (when image {:persist-image! {:item-id item-id :blob image}})))
                 {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))

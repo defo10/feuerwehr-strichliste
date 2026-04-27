@@ -10,6 +10,7 @@
    [feuerwehr-strichliste.styles :as styles]
    [feuerwehr-strichliste.domain.storage :as storage]
    [feuerwehr-strichliste.domain.effects]
+   [feuerwehr-strichliste.item.events :as item-events]
    [feuerwehr-strichliste.components.error-overlay :refer [error-overlay]]
    [feuerwehr-strichliste.pages.home :refer [home-page]]
    [feuerwehr-strichliste.pages.overview :refer [overview-page]]))
@@ -60,4 +61,5 @@
   (storage/init!
    (fn []
      (re-frame/dispatch-sync [::events/initialize-db])
+     (re-frame/dispatch [::item-events/load-images])
      (mount-root))))
