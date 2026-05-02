@@ -742,6 +742,107 @@
      :transition    "background 0.1s"}
     [:&:hover {:background "var(--color-surface-hover)"}]]
 
+   [:.top-nav-balance-area
+    {:display     "flex"
+     :align-items "baseline"
+     :gap         (rem 0.5)}]
+
+   [:.top-nav-balance
+    {:font-size             (rem 1)
+     :font-weight           700
+     :font-variant-numeric  "tabular-nums"
+     :white-space           "nowrap"}
+    ["&.positive" {:color "green"}]
+    ["&.negative" {:color "var(--color-primary)"}]
+    ["&.zero"     {:color "var(--color-on-surface-muted)"}]]
+
+   [:.top-nav-balance-delta
+    {:font-size             (rem 0.75)
+     :font-weight           600
+     :font-variant-numeric  "tabular-nums"
+     :color                 "var(--color-primary)"}]
+
+   [:.top-nav-top-up-btn
+    {:background     "none"
+     :border         "none"
+     :font-size      (rem 0.7)
+     :font-weight    700
+     :letter-spacing "0.05em"
+     :color          "var(--color-on-surface-muted)"
+     :cursor         "pointer"
+     :padding        0}
+    [:&:hover {:color "var(--color-on-surface)"}]]
+
+   [:.top-ups-table
+    {:padding "0 1.5rem"}]
+
+   [:.top-ups-table-header
+    {:display               "grid"
+     :grid-template-columns "1fr 80px 150px auto"
+     :gap                   (rem 1)
+     :padding               "0.5rem 0"
+     :border-bottom         "2px solid var(--color-outline)"
+     :font-size             (rem 0.8)
+     :font-weight           600
+     :color                 "var(--color-on-surface-muted)"}]
+
+   [:.top-ups-table-row
+    {:display               "grid"
+     :grid-template-columns "1fr 80px 150px auto"
+     :gap                   (rem 1)
+     :align-items           "center"
+     :padding               "0.75rem 0"
+     :border-bottom         "1px solid var(--color-outline)"}
+    ["&.cancelled" {:opacity "0.5"}]]
+
+   [:.top-ups-table-name
+    {:font-weight 500}]
+
+   [:.top-ups-table-amount
+    {:font-weight           600
+     :font-variant-numeric  "tabular-nums"}]
+
+   [:.top-ups-table-date
+    {:font-size (rem 0.875)
+     :color     "var(--color-on-surface-muted)"}]
+
+   [:.top-ups-table-actions
+    {:display "flex"
+     :gap     (rem 0.5)}]
+
+   [:.top-up-btn
+    {:padding       "0.375rem 0.75rem"
+     :border-radius "var(--radius)"
+     :border        "none"
+     :font-size     (rem 0.875)
+     :font-weight   600
+     :cursor        "pointer"
+     :transition    "opacity 0.1s"}
+    [:&:hover {:opacity 0.8}]
+    ["&.confirm" {:background "green" :color "#fff"}]
+    ["&.cancel"  {:background "transparent"
+                  :color      "var(--color-on-surface-muted)"
+                  :border     "1px solid var(--color-outline)"}]]
+
+   [:.top-up-status-label
+    {:display        "flex"
+     :flex-direction "column"
+     :gap            "0.1rem"
+     :font-size      (rem 0.875)
+     :font-weight    500
+     :color          "green"}
+    ["&.muted" {:color "var(--color-on-surface-muted)"}]]
+
+   [:.top-up-status-when
+    {:font-size  (rem 0.75)
+     :font-weight 400
+     :color      "var(--color-on-surface-muted)"}]
+
+   [:.top-ups-empty
+    {:padding   "2rem 0"
+     :color     "var(--color-on-surface-muted)"
+     :font-size (rem 1)}]
+
    [:.alphabet-bar
     {:position       "fixed"
      :right          0

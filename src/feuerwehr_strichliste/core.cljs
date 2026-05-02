@@ -14,17 +14,22 @@
    [feuerwehr-strichliste.components.error-overlay :refer [error-overlay]]
    [feuerwehr-strichliste.pages.home :refer [home-page]]
    [feuerwehr-strichliste.pages.overview :refer [overview-page]]
-   [feuerwehr-strichliste.pages.users :refer [users-page]]))
+   [feuerwehr-strichliste.pages.users :refer [users-page]]
+   [feuerwehr-strichliste.pages.top-ups :refer [top-ups-page]]
+   [feuerwehr-strichliste.top-up.events]
+   [feuerwehr-strichliste.top-up.subs]))
 
 (defmulti panels identity)
 (defmethod panels :default [] [:div "No panel found for this route."])
 (defmethod panels :home-panel [] [home-page])
 (defmethod panels :overview-panel [] [overview-page])
 (defmethod panels :users-panel [] [users-page])
+(defmethod panels :top-ups-panel [] [top-ups-page])
 
 (def routes ["/" {""         :home
                   "overview" :overview
-                  "users"    :users}])
+                  "users"    :users
+                  "top-ups"  :top-ups}])
 
 (defn- parse [url]
   (bidi/match-route routes url))

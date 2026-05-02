@@ -2,7 +2,7 @@
 
 (def ^:private capabilities
   {:kitchen #{:restock :manage-items}
-   :admin   #{:manage-users :view-all-profiles :void-transaction :manage-items}})
+   :admin   #{:manage-users :view-all-profiles :void-transaction :manage-items :confirm-top-ups}})
 
 (defn- restricted? [capability]
   (some #(contains? % capability) (vals capabilities)))

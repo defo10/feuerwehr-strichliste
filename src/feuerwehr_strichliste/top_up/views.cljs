@@ -1,0 +1,56 @@
+(ns feuerwehr-strichliste.top-up.views
+  (:require [reagent.core :as r]
+            [re-frame.core :as re-frame]
+            [feuerwehr-strichliste.top-up.events :as events]))
+
+(defn- format-cents [cents]
+  (str (quot cents 100) "," (let [r (mod cents 100)] (if (< r 10) (str "0" r) r))))
+
+(defn top-up-form [{:keys [current-user all-users on-close]}]
+  (let [form (r/atom {:user-id (:user/id current-user) :amount 0})]
+    (fn [{:keys [current-user all-users on-close]}]
+      (let [f      @form
+            admin? (= :admin (:user/role current-user))]
+        [:form.drawer-form {:on-submit #(.preventDefault %)}
+
+         (when admin?
+           [:div.form-field
+            [:label "Nutzer"]
+            [:select {:value     (:user-id f)
+                      :on-change #(swap! form assoc :user-id (js/parseInt (.. % -target -value)))}
+             (for [user all-users]
+               ^{:key (:user/id user)} [:option {:value (:user/id user)} (:user/name user)])]])
+
+         [:div.form-field
+          [:label "Betrag"]
+          [:div.price-wrapper
+           [:input.price-input
+            {:type            "text"
+             :input-mode      "numeric"
+             :value           (format-cents (:amount f))
+             :on-change       identity
+             :on-before-input (fn [e]
+                                (.preventDefault e)
+                                (when-let [d (.-data e)]
+                                  (when (re-matches #"\d" d)
+                                    (swap! form update :amount
+                                           (fn [c]
+                                             (let [n (+ (* c 10) (js/parseInt d))]
+                                               (if (< n 1000000) n c)))))))
+             :on-key-down     (fn [e]
+                                (when (= "Backspace" (.-key e))
+                                  (.preventDefault e)
+                                  (swap! form update :amount #(quot % 10))))}]
+           [:span.price-currency "€"]]]
+
+         [:div.form-actions
+          [:button.form-submit
+           {:type     "submit"
+            :disabled (zero? (:amount f))
+            :on-click (fn [e]
+                        (.preventDefault e)
+                        (re-frame/dispatch [::events/request-top-up
+                                            {:user-id (:user-id f)
+                                             :amount  (:amount f)}])
+                        (on-close))}
+           "Einzahlung melden"]]]))))

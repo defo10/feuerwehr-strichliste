@@ -119,21 +119,63 @@
    [:user/status     [:enum :active :inactive :suspended]]
    [:user/pin-hash   {:optional true} string?]])
 
+(def TopUpRequestedEvent
+  [:map
+   [:event/id        nat-int?]
+   [:event/timestamp string?]
+   [:event/actor     nat-int?]
+   [:event/type      [:= :balance/top-up-requested]]
+   [:top-up/user-id  nat-int?]
+   [:top-up/amount   pos-int?]])
+
+(def TopUpConfirmedEvent
+  [:map
+   [:event/id           nat-int?]
+   [:event/timestamp    string?]
+   [:event/actor        nat-int?]
+   [:event/type         [:= :balance/top-up-confirmed]]
+   [:top-up/request-id  nat-int?]])
+
+(def TopUpCancelledEvent
+  [:map
+   [:event/id           nat-int?]
+   [:event/timestamp    string?]
+   [:event/actor        nat-int?]
+   [:event/type         [:= :balance/top-up-cancelled]]
+   [:top-up/request-id  nat-int?]])
+
+(def TopUp
+  [:map
+   [:top-up/id           nat-int?]
+   [:top-up/user-id      nat-int?]
+   [:top-up/amount       pos-int?]
+   [:top-up/requested-at string?]
+   [:top-up/requested-by nat-int?]
+   [:top-up/status       [:enum :pending :confirmed :cancelled]]
+   [:top-up/confirmed-at {:optional true} string?]
+   [:top-up/confirmed-by {:optional true} nat-int?]
+   [:top-up/cancelled-at {:optional true} string?]
+   [:top-up/cancelled-by {:optional true} nat-int?]])
+
 (def DomainEvent
   [:multi {:dispatch :event/type}
-   [:user/created           UserCreatedEvent]
-   [:user/updated           UserUpdatedEvent]
-   [:item/created           ItemCreatedEvent]
-   [:item/updated           ItemUpdatedEvent]
-   [:cart/checked-out       CartCheckedOutEvent]
-   [:auth/sign-in-attempted AuthSignInAttemptedEvent]
-   [:auth/signed-out        AuthSignedOutEvent]])
+   [:user/created              UserCreatedEvent]
+   [:user/updated              UserUpdatedEvent]
+   [:item/created              ItemCreatedEvent]
+   [:item/updated              ItemUpdatedEvent]
+   [:cart/checked-out          CartCheckedOutEvent]
+   [:auth/sign-in-attempted    AuthSignInAttemptedEvent]
+   [:auth/signed-out           AuthSignedOutEvent]
+   [:balance/top-up-requested  TopUpRequestedEvent]
+   [:balance/top-up-confirmed  TopUpConfirmedEvent]
+   [:balance/top-up-cancelled  TopUpCancelledEvent]])
 
 (def Snapshot
   [:map
    [:users          [:map-of nat-int? User]]
    [:balances       [:map-of nat-int? number?]]
    [:items          [:map-of nat-int? Item]]
+   [:top-ups        [:map-of nat-int? TopUp]]
    [:next-event-id  nat-int?]])
 
 (comment

@@ -11,7 +11,16 @@
    [feuerwehr-strichliste.user.events :as user-events]
    [feuerwehr-strichliste.components.drawer :refer [drawer]]
    [feuerwehr-strichliste.item.views :refer [new-item-form edit-item-form item-card receipt-overlay format-price]]
-   [feuerwehr-strichliste.user.views :refer [edit-user-form]]))
+   [feuerwehr-strichliste.user.views :refer [edit-user-form]]
+   [feuerwehr-strichliste.top-up.views :refer [top-up-form]]))
+
+(defn- format-balance [cents]
+  (if (neg? cents)
+    (str "-" (format-price (- cents)))
+    (format-price cents)))
+
+(defn- balance-class [cents]
+  (cond (pos? cents) "positive" (neg? cents) "negative" :else "zero"))
 
 (defn- actions-for [role open-new-item!]
   (let [kitchen [{:icon "➕" :color "#4CAF50" :title "Neues Essen/Trinken hinzufügen" :on-click open-new-item!}
@@ -19,7 +28,8 @@
                  {:icon "📦" :color "#FF9800" :title "Bestand bearbeiten"}]
         admin   [{:icon "👥" :color "#9C27B0" :title "Nutzer verwalten"
                   :on-click #(re-frame/dispatch [::events/navigate :users])}
-                 {:icon "💰" :color "#009688" :title "Einzahlungen überblicken"}]]
+                 {:icon "💰" :color "#3F51B5" :title "Einzahlungen überblicken"
+                  :on-click #(re-frame/dispatch [::events/navigate :top-ups])}]]
     (case role
       :kitchen kitchen
       :admin   (concat kitchen admin)
@@ -37,6 +47,7 @@
 
 (defn overview-page []
   (let [current-user  (re-frame/subscribe [::app-subs/current-user])
+        balance       (re-frame/subscribe [::app-subs/current-user-balance])
         active-tab    (re-frame/subscribe [::item-subs/active-tab])
         items-by-type (re-frame/subscribe [::item-subs/items-by-type])
         has-items?    (re-frame/subscribe [::item-subs/cart-has-items?])
@@ -44,11 +55,17 @@
         receipt       (re-frame/subscribe [::item-subs/receipt])
         editing-item  (re-frame/subscribe [::item-subs/editing-item])
         profile-open? (re-frame/subscribe [::user-subs/profile-open?])
-        drawer-open?  (r/atom false)]
+        all-users     (re-frame/subscribe [::user-subs/all-users])
+        drawer-open?  (r/atom false)
+        top-up-open?  (r/atom false)]
     (fn []
-      (let [user    @current-user
-            tab     @active-tab
-            actions (actions-for (:user/role user) #(reset! drawer-open? true))]
+      (let [user      @current-user
+            bal       @balance
+            cart      @cart-total
+            has-cart? @has-items?
+            projected (- bal cart)
+            tab       @active-tab
+            actions   (actions-for (:user/role user) #(reset! drawer-open? true))]
         [:<>
          [:div
           [:nav.top-nav
@@ -57,13 +74,18 @@
             [:button.top-nav-edit-profile
              {:on-click #(re-frame/dispatch [::user-events/open-profile])}
              "BEARBEITEN"]]
+           [:div.top-nav-balance-area
+            [:span.top-nav-balance {:class (balance-class (if has-cart? projected bal))}
+             (format-balance (if has-cart? projected bal))
+             (when has-cart?
+               [:span.top-nav-balance-delta (str " (-" (format-price cart) ")")])]
+            [:button.top-nav-top-up-btn {:on-click #(reset! top-up-open? true)}
+             "Geld einzahlen"]]
            [:button.top-nav-logout
-            {:on-click #(if @has-items?
+            {:on-click #(if has-cart?
                           (re-frame/dispatch [::item-events/show-receipt])
                           (re-frame/dispatch [::auth-events/sign-out]))}
-            (if @has-items?
-              (str "Fertig (" (format-price @cart-total) ")")
-              "Fertig")]]
+            "Fertig"]]
           (when (seq actions)
             [action-bar actions])
           [:div.tab-bar
@@ -95,4 +117,11 @@
                   :title    "Mein Profil"}
           (when @profile-open?
             [edit-user-form user :self
-             #(re-frame/dispatch [::user-events/close-profile])])]]))))
+             #(re-frame/dispatch [::user-events/close-profile])])]
+         [drawer {:open?    @top-up-open?
+                  :on-close #(reset! top-up-open? false)
+                  :title    "Einzahlung melden"}
+          (when @top-up-open?
+            [top-up-form {:current-user user
+                          :all-users    @all-users
+                          :on-close     #(reset! top-up-open? false)}])]]))))

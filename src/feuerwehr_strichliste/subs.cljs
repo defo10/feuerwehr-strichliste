@@ -16,3 +16,8 @@
  ::current-user
  (fn [db _]
    (get-in db [:domain :users (get-in db [:ui :current-user-id])])))
+
+(re-frame/reg-sub
+ ::current-user-balance
+ (fn [db _]
+   (get-in db [:domain :balances (get-in db [:ui :current-user-id])] 0)))
