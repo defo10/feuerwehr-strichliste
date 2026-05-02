@@ -65,25 +65,26 @@
               "+ Hinzufügen"])]
 
           [:div.users-table
-           [:div.users-table-header
+           [:div.data-table-header
             [col-header sort-state :name "Name"]
             [col-header sort-state :role "Rolle"]
             [col-header sort-state :status "Status"]
             [:span]]
            (for [user users]
              ^{:key (:user/id user)}
-             [:div.users-table-row
-              [:span.users-table-name (:user/name user)]
-              (if @can-manage?
-                [role-select user]
-                [:span.role-label (role-labels (:user/role user))])
-              [:span.status-badge {:class (name (:user/status user))}
+             [:div.data-table-row
+              [:span.data-table-cell.users-table-name (:user/name user)]
+              [:div.data-table-cell
+               (if @can-manage?
+                 [role-select user]
+                 [:span.role-label (role-labels (:user/role user))])]
+              [:span.data-table-cell.status-badge {:class (name (:user/status user))}
                (status-labels (:user/status user))]
-              (if @can-manage?
-                [:button.item-card-edit
-                 {:on-click #(re-frame/dispatch [::user-events/edit-user user])}
-                 "✏️"]
-                [:span])])]]
+              [:div.data-table-cell
+               (when @can-manage?
+                 [:button.item-card-edit
+                  {:on-click #(re-frame/dispatch [::user-events/edit-user user])}
+                  "✏️"])]])]]
 
          [drawer {:open?    @add-open?
                   :on-close #(reset! add-open? false)

@@ -674,35 +674,44 @@
      :transition    "opacity 0.1s"}
     [:&:hover {:opacity 0.9}]]
 
-   [:.users-table
-    {:padding "0 1.5rem"}]
+   [:.data-table-header
+    {:grid-column           "1 / -1"
+     :display               "grid"
+     :grid-template-columns "subgrid"
+     :padding               "0.5rem 0"
+     :border-bottom         "2px solid var(--color-outline)"
+     :font-size             (rem 0.8)
+     :font-weight           600
+     :color                 "var(--color-on-surface-muted)"}]
 
-   [:.users-table-header
+   [:.data-table-row
+    {:grid-column           "1 / -1"
+     :display               "grid"
+     :grid-template-columns "subgrid"
+     :align-items           "center"
+     :border-bottom         "1px solid var(--color-outline)"}
+    ["&.cancelled" {:opacity "0.5"}]]
+
+   [:.data-table-cell
+    {:padding "0.75rem 0"}]
+
+   [:.users-table
     {:display               "grid"
      :grid-template-columns "1fr 120px 80px 40px"
-     :gap                   (rem 1)
-     :padding               "0.5rem 0"
-     :border-bottom         "2px solid var(--color-outline)"}]
+     :column-gap            (rem 1)
+     :padding               "0 1.5rem"}]
 
    [:.col-header
-    {:background    "none"
-     :border        "none"
-     :padding       0
-     :font-size     (rem 0.8)
-     :font-weight   600
-     :color         "var(--color-on-surface-muted)"
-     :cursor        "pointer"
-     :text-align    "left"
-     :white-space   "nowrap"}
+    {:background  "none"
+     :border      "none"
+     :padding     0
+     :font-size   (rem 0.8)
+     :font-weight 600
+     :color       "var(--color-on-surface-muted)"
+     :cursor      "pointer"
+     :text-align  "left"
+     :white-space "nowrap"}
     [:&:hover {:color "var(--color-on-surface)"}]]
-
-   [:.users-table-row
-    {:display               "grid"
-     :grid-template-columns "1fr 120px 80px 40px"
-     :gap                   (rem 1)
-     :align-items           "center"
-     :padding               "0.75rem 0"
-     :border-bottom         "1px solid var(--color-outline)"}]
 
    [:.users-table-name
     {:font-weight 500}]
@@ -774,26 +783,10 @@
     [:&:hover {:color "var(--color-on-surface)"}]]
 
    [:.top-ups-table
-    {:padding "0 1.5rem"}]
-
-   [:.top-ups-table-header
     {:display               "grid"
      :grid-template-columns "1fr 80px 150px auto"
-     :gap                   (rem 1)
-     :padding               "0.5rem 0"
-     :border-bottom         "2px solid var(--color-outline)"
-     :font-size             (rem 0.8)
-     :font-weight           600
-     :color                 "var(--color-on-surface-muted)"}]
-
-   [:.top-ups-table-row
-    {:display               "grid"
-     :grid-template-columns "1fr 80px 150px auto"
-     :gap                   (rem 1)
-     :align-items           "center"
-     :padding               "0.75rem 0"
-     :border-bottom         "1px solid var(--color-outline)"}
-    ["&.cancelled" {:opacity "0.5"}]]
+     :column-gap            (rem 1)
+     :padding               "0 1.5rem"}]
 
    [:.top-ups-table-name
     {:font-weight 500}]

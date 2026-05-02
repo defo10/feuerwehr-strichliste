@@ -17,13 +17,13 @@
         user-name    (get-in users-map [(:top-up/user-id top-up) :user/name] "?")
         confirmed-by (get-in users-map [(:top-up/confirmed-by top-up) :user/name])
         cancelled-by (get-in users-map [(:top-up/cancelled-by top-up) :user/name])]
-    [:div.top-ups-table-row {:class (name status)}
-     [:span.top-ups-table-name user-name]
-     [:span.top-ups-table-amount (format-price (:top-up/amount top-up))]
-     [:span.top-ups-table-date (format-date (:top-up/requested-at top-up))]
+    [:div.data-table-row {:class (name status)}
+     [:span.data-table-cell.top-ups-table-name user-name]
+     [:span.data-table-cell.top-ups-table-amount (format-price (:top-up/amount top-up))]
+     [:span.data-table-cell.top-ups-table-date (format-date (:top-up/requested-at top-up))]
      (case status
        :pending
-       [:div.top-ups-table-actions
+       [:div.data-table-cell.top-ups-table-actions
         [:button.top-up-btn.confirm
          {:on-click #(re-frame/dispatch [::top-up-events/confirm-top-up (:top-up/id top-up)])}
          "Bestätigen"]
@@ -31,11 +31,11 @@
          {:on-click #(re-frame/dispatch [::top-up-events/cancel-top-up (:top-up/id top-up)])}
          "Stornieren"]]
        :confirmed
-       [:div.top-up-status-label
+       [:div.data-table-cell.top-up-status-label
         [:span "Bestätigt"]
         [:span.top-up-status-when (str confirmed-by " · " (format-date (:top-up/confirmed-at top-up)))]]
        :cancelled
-       [:div.top-up-status-label.muted
+       [:div.data-table-cell.top-up-status-label.muted
         [:span "Storniert"]
         [:span.top-up-status-when (str cancelled-by " · " (format-date (:top-up/cancelled-at top-up)))]])]))
 
@@ -53,13 +53,13 @@
         [:span]]
 
        [:div.top-ups-table
-        [:div.top-ups-table-header
+        [:div.data-table-header
          [:span "Nutzer"]
          [:span "Betrag"]
          [:span "Eingereicht"]
          [:span "Status"]]
         (if (empty? @top-ups)
-          [:div.top-ups-empty "Keine Einzahlungen vorhanden."]
+          [:div.top-ups-empty {:style {:grid-column "1 / -1"}} "Keine Einzahlungen vorhanden."]
           (for [top-up @top-ups]
             ^{:key (:top-up/id top-up)}
             [top-up-row top-up @users-map]))]])))
