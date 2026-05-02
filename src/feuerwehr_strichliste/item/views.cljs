@@ -82,8 +82,8 @@
       [:div.receipt-total
        [:span "Gesamt"]
        [:span.receipt-total-amount (if (neg? net)
-                                    (str "-" (format-price (- net)))
-                                    (format-price net))]]
+                                     (str "-" (format-price (- net)))
+                                     (format-price net))]]
       [:div.receipt-actions
        [:button.receipt-edit
         {:on-click #(re-frame/dispatch [::events/dismiss-receipt])}
@@ -92,7 +92,7 @@
         {:on-click (fn []
                      (re-frame/dispatch [::events/confirm-checkout])
                      (re-frame/dispatch [::auth-events/sign-out]))}
-        "Okay"]]]]]))
+        "Okay"]]]]))
 
 
 ;;

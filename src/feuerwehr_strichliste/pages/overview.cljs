@@ -22,18 +22,12 @@
 (defn- balance-class [cents]
   (cond (pos? cents) "positive" (neg? cents) "negative" :else "zero"))
 
-(defn- actions-for [role open-new-item!]
-  (let [kitchen [{:icon "➕" :color "#4CAF50" :title "Neues Essen/Trinken hinzufügen" :on-click open-new-item!}
-                 {:icon "✏️"  :color "#2196F3" :title "Essen/Trinken bearbeiten"}
-                 {:icon "📦" :color "#FF9800" :title "Bestand bearbeiten"}]
-        admin   [{:icon "👥" :color "#9C27B0" :title "Nutzer verwalten"
-                  :on-click #(re-frame/dispatch [::events/navigate :users])}
-                 {:icon "💰" :color "#3F51B5" :title "Einzahlungen überblicken"
-                  :on-click #(re-frame/dispatch [::events/navigate :top-ups])}]]
-    (case role
-      :kitchen kitchen
-      :admin   (concat kitchen admin)
-      nil)))
+(defn- actions-for [role]
+  (when (= role :admin)
+    [{:icon "👥" :color "#9C27B0" :title "Nutzer verwalten"
+      :on-click #(re-frame/dispatch [::events/navigate :users])}
+     {:icon "💰" :color "#3F51B5" :title "Einzahlungen überblicken"
+      :on-click #(re-frame/dispatch [::events/navigate :top-ups])}]))
 
 (defn- action-button [{:keys [icon color title on-click]}]
   [:button.action-button {:style {:background color} :on-click on-click}
@@ -54,6 +48,7 @@
         cart-total    (re-frame/subscribe [::item-subs/cart-total])
         receipt       (re-frame/subscribe [::item-subs/receipt])
         editing-item  (re-frame/subscribe [::item-subs/editing-item])
+        can-manage?   (re-frame/subscribe [::item-subs/can-manage-items?])
         profile-open? (re-frame/subscribe [::user-subs/profile-open?])
         all-users     (re-frame/subscribe [::user-subs/all-users])
         drawer-open?  (r/atom false)
@@ -65,7 +60,7 @@
             has-cart? @has-items?
             projected (- bal cart)
             tab       @active-tab
-            actions   (actions-for (:user/role user) #(reset! drawer-open? true))]
+            actions   (actions-for (:user/role user))]
         [:<>
          [:div
           [:nav.top-nav
@@ -98,8 +93,21 @@
              :on-click #(re-frame/dispatch [::item-events/set-active-tab :food])}
             "Essen"]]
           [:div.item-grid
-           (for [item (get @items-by-type tab [])]
-             ^{:key (:item/id item)} [item-card item])]]
+           (concat
+            (when @can-manage?
+              [^{:key "new-item"}
+               [:button.item-card
+                {:on-click #(reset! drawer-open? true)
+                 :style    {:background   "#4CAF50"
+                             :border-color "#4CAF50"
+                             :color        "#fff"
+                             :cursor       "pointer"
+                             :justify-content "center"
+                             :align-items  "center"}}
+                [:span {:style {:font-size "2rem"}} "➕"]
+                [:span {:style {:font-size "0.9rem" :font-weight 600}} "Neu"]]])
+            (for [item (get @items-by-type tab [])]
+              ^{:key (:item/id item)} [item-card item]))]]
          (when @receipt
            [receipt-overlay @receipt])
          [drawer {:open?    @drawer-open?
