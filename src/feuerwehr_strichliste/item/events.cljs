@@ -104,18 +104,23 @@
 (re-frame/reg-event-db
  ::show-receipt
  (fn-traced [db _]
-            (let [cart  (get-in db [:ui :cart])
-                  items (get-in db [:domain :items])
-                  pairs (->> cart
-                             (keep (fn [[item-id qty]]
-                                     (when (pos? qty)
-                                       (when-let [item (get items item-id)]
-                                         {:item item :quantity qty}))))
-                             (sort-by #(get-in % [:item :item/name])))
-                  total (reduce (fn [sum {:keys [item quantity]}]
-                                  (+ sum (* quantity (:item/price item))))
-                                0 pairs)]
-              (assoc-in db [:ui :receipt] {:entries pairs :total total}))))
+            (let [cart    (get-in db [:ui :cart])
+                  items   (get-in db [:domain :items])
+                  user-id (get-in db [:ui :current-user-id])
+                  pairs   (->> cart
+                               (keep (fn [[item-id qty]]
+                                       (when (pos? qty)
+                                         (when-let [item (get items item-id)]
+                                           {:item item :quantity qty}))))
+                               (sort-by #(get-in % [:item :item/name])))
+                  total   (reduce (fn [sum {:keys [item quantity]}]
+                                    (+ sum (* quantity (:item/price item))))
+                                  0 pairs)
+                  top-ups (->> (vals (get-in db [:domain :top-ups]))
+                               (filter #(and (= (:top-up/user-id %) user-id)
+                                             (= (:top-up/status %) :pending)))
+                               (sort-by :top-up/requested-at))]
+              (assoc-in db [:ui :receipt] {:entries pairs :total total :top-ups top-ups}))))
 
 (re-frame/reg-event-db
  ::dismiss-receipt
