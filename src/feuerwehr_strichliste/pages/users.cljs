@@ -1,8 +1,10 @@
 (ns feuerwehr-strichliste.pages.users
   (:require
+   [clojure.string :as str]
    [reagent.core :as r]
    [re-frame.core :as re-frame]
    [feuerwehr-strichliste.events :as events]
+   [feuerwehr-strichliste.subs :as subs]
    [feuerwehr-strichliste.user.subs :as user-subs]
    [feuerwehr-strichliste.user.events :as user-events]
    [feuerwehr-strichliste.user.views :refer [new-user-form edit-user-form role-labels status-labels]]
@@ -13,7 +15,7 @@
 
 (defn- sort-value [col user]
   (case col
-    :name   (:user/name user)
+    :name   (some-> (:user/name user) str/lower-case)
     :role   (role-order (:user/role user))
     :status (status-order (:user/status user))))
 
@@ -46,6 +48,7 @@
 
 (defn users-page []
   (let [all-users    (re-frame/subscribe [::user-subs/all-users])
+        all-balances (re-frame/subscribe [::subs/all-balances])
         editing-user (re-frame/subscribe [::user-subs/editing-user])
         can-manage?  (re-frame/subscribe [::user-subs/can-manage-users?])
         add-open?    (r/atom false)
@@ -67,6 +70,7 @@
           [:div.users-table
            [:div.data-table-header
             [col-header sort-state :name "Name"]
+            [:span.data-table-cell "Guthaben"]
             [col-header sort-state :role "Rolle"]
             [col-header sort-state :status "Status"]
             [:span]]
@@ -74,6 +78,8 @@
              ^{:key (:user/id user)}
              [:div.data-table-row
               [:span.data-table-cell.users-table-name (:user/name user)]
+              [:span.data-table-cell
+               (str (.toFixed (get @all-balances (:user/id user) 0) 2) " €")]
               [:div.data-table-cell
                (if @can-manage?
                  [role-select user]

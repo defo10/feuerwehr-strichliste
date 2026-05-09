@@ -697,7 +697,7 @@
 
    [:.users-table
     {:display               "grid"
-     :grid-template-columns "1fr 120px 80px 40px"
+     :grid-template-columns "1fr max-content max-content max-content max-content"
      :column-gap            (rem 1)
      :padding               "0 1.5rem"}]
 
