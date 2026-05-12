@@ -149,14 +149,14 @@ The ID is the event's position in the log. It's stored inside the event so that 
 Command handlers apply the event to the domain snapshot using `apply-event`, then return both the updated db and the persist effect together — ensuring the two are never decoupled:
 
 ```clojure
-{:db       (assoc db :domain domain')
+{:db       (assoc db :snapshot domain')
  :persist! {:event event' :snapshot domain'}}
 ```
 
 This separates the app-db into two regions:
 
 ```clojure
-{:domain { ... }    ;; snapshot — materialized view, updated by command handlers
+{:snapshot { ... }    ;; snapshot — materialized view, updated by command handlers
  :ui     { ... }}   ;; modals, loading states, selections — freely written
 ```
 
@@ -171,7 +171,7 @@ Subscriptions are layered. Never do computation in an extractor.
 ```clojure
 (re-frame/reg-sub
  ::items-map
- (fn [db _] (get-in db [:domain :items])))
+ (fn [db _] (get-in db [:snapshot :items])))
 ```
 
 **Layer 3+ — materializer**: depends on a layer-2 sub via `:<-`. Does all filtering, sorting, and derivation. Only re-runs when its inputs change.
@@ -196,7 +196,7 @@ re-frame command handler
     ├── rejected → {:db (assoc-in db [:ui :error] ...)}
     └── accepted → apply-event(snapshot, event) → {domain', event'}
                         ↓
-                   {:db       (assoc db :domain domain')   ← sync, UI updates immediately
+                   {:db       (assoc db :snapshot domain')   ← sync, UI updates immediately
                     :persist! {:event event' :snapshot domain'}}
                         ↓
                persist! effect handler (async)
@@ -220,18 +220,18 @@ A command handler:
 (re-frame/reg-event-fx
  :command/record-consumption
  (fn [{:keys [db]} [_ {:keys [user-id item-id quantity]}]]
-   (let [user  (get-in db [:domain :users user-id])
-         price (get-in db [:domain :items item-id :item/price])]
+   (let [user  (get-in db [:snapshot :users user-id])
+         price (get-in db [:snapshot :items item-id :item/price])]
      (if (and (= :active (:user/status user)) price)
        (let [{:keys [domain event]} (reducer/apply-event
-                                     (:domain db)
+                                     (:snapshot db)
                                      {:event/type             :consumption/recorded
                                       :event/timestamp        (.toISOString (js/Date.))
                                       :event/actor            user-id
                                       :consumption/item-id    item-id
                                       :consumption/quantity   quantity
                                       :consumption/unit-price price})]
-         {:db       (assoc db :domain domain)
+         {:db       (assoc db :snapshot domain)
           :persist! {:event event :snapshot domain}})
        {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
 ```
@@ -278,7 +278,7 @@ Pure function. No side effects, no IO. No `:default` method — unhandled event 
         event'  (assoc event :event/id id)
         domain' (-> (reduce-event domain event')
                     (update :next-event-id inc))]
-    {:domain domain' :event event'}))
+    {:snapshot domain' :event event'}))
 ```
 
 Command handlers call `apply-event`, never `reduce-event` directly. Because it's pure, testing is trivial: pass a snapshot and an event, assert the output.
@@ -320,7 +320,7 @@ If the snapshot is lost or corrupted, rebuild by replaying the log:
 
 ```clojure
 (defn rebuild-snapshot [event-log]
-  (reduce #(:domain (reducer/apply-event %1 %2)) reducer/empty-snapshot event-log))
+  (reduce #(:snapshot (reducer/apply-event %1 %2)) reducer/empty-snapshot event-log))
 ```
 
 ---

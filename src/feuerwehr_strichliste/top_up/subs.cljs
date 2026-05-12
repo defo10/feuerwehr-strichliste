@@ -6,7 +6,7 @@
 (re-frame/reg-sub
  ::top-ups-map
  (fn [db _]
-   (get-in db [:domain :top-ups])))
+   (get-in db [:snapshot :top-ups])))
 
 (re-frame/reg-sub
  ::top-ups-sorted

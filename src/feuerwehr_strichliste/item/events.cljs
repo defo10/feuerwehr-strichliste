@@ -33,7 +33,7 @@
 (re-frame/reg-event-fx
  ::load-images
  (fn-traced [{:keys [db]} _]
-            (let [item-ids (->> (vals (get-in db [:domain :items]))
+            (let [item-ids (->> (vals (get-in db [:snapshot :items]))
                                 (keep :item/image-key))]
               (when (seq item-ids)
                 {:load-item-images! item-ids}))))
@@ -52,9 +52,9 @@
  ::item-update
  (fn-traced [{:keys [db]} [_ {:item/keys [id type name price stock] :keys [image]}]]
             (let [user-id (get-in db [:ui :current-user-id])
-                  role    (get-in db [:domain :users user-id :user/role])]
+                  role    (get-in db [:snapshot :users user-id :user/role])]
               (if (permissions/can? role :manage-items)
-                (let [current           (get-in db [:domain :items id])
+                (let [current           (get-in db [:snapshot :items id])
                       metadata-changed? (or image
                                             (not= type  (:item/type current))
                                             (not= name  (:item/name current))
@@ -62,11 +62,11 @@
                       stock-changed?    (not= stock (:item/stock current))
                       ts                (.toISOString (js/Date.))
 
-                      [domain1 edit-event]
+                      [snapshot1 edit-event]
                       (if metadata-changed?
-                        (let [{:keys [domain event]}
+                        (let [{:keys [snapshot event]}
                               (reducer/apply-event
-                               (:domain db)
+                               (:snapshot db)
                                (fn [ev-id]
                                  (merge {:event/type      :item/edited
                                          :event/id        ev-id
@@ -77,14 +77,14 @@
                                          :item/name       name
                                          :item/price      price}
                                         (when image {:item/image-key id}))))]
-                          [domain event])
-                        [(:domain db) nil])
+                          [snapshot event])
+                        [(:snapshot db) nil])
 
-                      [domain2 restock-event]
+                      [snapshot2 restock-event]
                       (if stock-changed?
-                        (let [{:keys [domain event]}
+                        (let [{:keys [snapshot event]}
                               (reducer/apply-event
-                               domain1
+                               snapshot1
                                (fn [ev-id]
                                  {:event/type      :item/restocked
                                   :event/id        ev-id
@@ -92,12 +92,12 @@
                                   :event/actor     user-id
                                   :item/id         id
                                   :item/stock      stock}))]
-                          [domain event])
-                        [domain1 nil])
+                          [snapshot event])
+                        [snapshot1 nil])
 
                       events (filterv some? [edit-event restock-event])]
                   (if (seq events)
-                    (let [base (assoc db :domain domain2)
+                    (let [base (assoc db :snapshot snapshot2)
                           db'  (if image
                                  ; revoke the old URL before replacing it — object URLs hold the blob
                                  ; in memory until explicitly revoked or the page unloads
@@ -105,7 +105,7 @@
                                      (assoc-in base [:ui :item-images id] (js/URL.createObjectURL image)))
                                  base)]
                       (merge {:db       db'
-                              :persist! {:events events :snapshot domain2}}
+                              :persist! {:events events :snapshot snapshot2}}
                              (when image {:persist-image! {:item-id id :blob image}})))
                     {:db db}))
                 {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
@@ -118,7 +118,7 @@
 (re-frame/reg-event-db
  ::increment
  (fn-traced [db [_ item-id]]
-            (let [stock (get-in db [:domain :items item-id :item/stock])
+            (let [stock (get-in db [:snapshot :items item-id :item/stock])
                   qty   (get-in db [:ui :cart item-id] 0)]
               (if (< qty stock)
                 (assoc-in db [:ui :cart item-id] (inc qty))
@@ -137,7 +137,7 @@
  ::show-receipt
  (fn-traced [db _]
             (let [cart    (get-in db [:ui :cart])
-                  items   (get-in db [:domain :items])
+                  items   (get-in db [:snapshot :items])
                   user-id (get-in db [:ui :current-user-id])
                   pairs   (->> cart
                                (keep (fn [[item-id qty]]
@@ -148,7 +148,7 @@
                   total   (reduce (fn [sum {:keys [item quantity]}]
                                     (+ sum (* quantity (:item/price item))))
                                   0 pairs)
-                  top-ups (->> (vals (get-in db [:domain :top-ups]))
+                  top-ups (->> (vals (get-in db [:snapshot :top-ups]))
                                (filter #(and (= (:top-up/user-id %) user-id)
                                              (= (:top-up/status %) :pending)))
                                (sort-by :top-up/requested-at))]
@@ -164,44 +164,44 @@
  (fn-traced [{:keys [db]} _]
             (let [entries  (get-in db [:ui :receipt :entries])
                   user-id  (get-in db [:ui :current-user-id])
-                  {:keys [domain event]} (reducer/apply-event
-                                          (:domain db)
-                                          (fn [id]
-                                            {:event/type       :cart/checked-out
-                                             :event/id         id
-                                             :event/timestamp  (.toISOString (js/Date.))
-                                             :event/actor      user-id
-                                             :checkout/entries (vec (map (fn [{:keys [item quantity]}]
-                                                                           {:item-id    (:item/id item)
-                                                                            :quantity   quantity
-                                                                            :unit-price (:item/price item)})
-                                                                         entries))}))]
-              {:db       (assoc db :domain domain)
-               :persist! {:events [event] :snapshot domain}})))
+                  {:keys [snapshot event]} (reducer/apply-event
+                                            (:snapshot db)
+                                            (fn [id]
+                                              {:event/type       :cart/checked-out
+                                               :event/id         id
+                                               :event/timestamp  (.toISOString (js/Date.))
+                                               :event/actor      user-id
+                                               :checkout/entries (vec (map (fn [{:keys [item quantity]}]
+                                                                             {:item-id    (:item/id item)
+                                                                              :quantity   quantity
+                                                                              :unit-price (:item/price item)})
+                                                                           entries))}))]
+              {:db       (assoc db :snapshot snapshot)
+               :persist! {:events [event] :snapshot snapshot}})))
 
 (re-frame/reg-event-fx
  ::item-create
  (fn-traced [{:keys [db]} [_ {:item/keys [type name price stock] :keys [image]}]]
             (let [user-id (get-in db [:ui :current-user-id])
-                  role    (get-in db [:domain :users user-id :user/role])]
+                  role    (get-in db [:snapshot :users user-id :user/role])]
               (if (permissions/can? role :manage-items)
-                (let [{:keys [domain event]} (reducer/apply-event
-                                              (:domain db)
-                                              (fn [id]
-                                                (merge {:event/type      :item/created
-                                                        :event/id        id
-                                                        :event/timestamp (.toISOString (js/Date.))
-                                                        :event/actor     user-id
-                                                        :item/type       type
-                                                        :item/name       name
-                                                        :item/price      price
-                                                        :item/stock      stock}
-                                                       (when image {:item/image-key id}))))
+                (let [{:keys [snapshot event]} (reducer/apply-event
+                                                (:snapshot db)
+                                                (fn [id]
+                                                  (merge {:event/type      :item/created
+                                                          :event/id        id
+                                                          :event/timestamp (.toISOString (js/Date.))
+                                                          :event/actor     user-id
+                                                          :item/type       type
+                                                          :item/name       name
+                                                          :item/price      price
+                                                          :item/stock      stock}
+                                                         (when image {:item/image-key id}))))
                       item-id (:event/id event)
-                      db'     (cond-> (assoc db :domain domain)
+                      db'     (cond-> (assoc db :snapshot snapshot)
                                 image (assoc-in [:ui :item-images item-id]
                                                 (js/URL.createObjectURL image)))]
                   (merge {:db       db'
-                          :persist! {:events [event] :snapshot domain}}
+                          :persist! {:events [event] :snapshot snapshot}}
                          (when image {:persist-image! {:item-id item-id :blob image}})))
                 {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))

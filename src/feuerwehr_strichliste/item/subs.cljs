@@ -44,7 +44,7 @@
 (re-frame/reg-sub
  ::items-map
  (fn [db _]
-   (get-in db [:domain :items])))
+   (get-in db [:snapshot :items])))
 
 (re-frame/reg-sub
  ::item-images

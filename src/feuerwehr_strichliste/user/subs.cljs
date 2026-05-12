@@ -7,7 +7,7 @@
 (re-frame/reg-sub
  ::users-map
  (fn [db _]
-   (get-in db [:domain :users])))
+   (get-in db [:snapshot :users])))
 
 (re-frame/reg-sub
  ::search-query

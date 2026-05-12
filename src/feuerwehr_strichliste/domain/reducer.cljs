@@ -105,10 +105,10 @@
   snapshot)
 
 ; build-event receives the assigned sequential id and must return a complete event — see schema/DomainEvent.
-(defn apply-event [domain build-event]
+(defn apply-event [snapshot build-event]
   {:post [(m/validate schema/DomainEvent (:event %))]}
-  (let [id      (:next-event-id domain)
-        event   (build-event id)
-        domain' (-> (reduce-event domain event)
-                    (update :next-event-id inc))]
-    {:domain domain' :event event}))
+  (let [id        (:next-event-id snapshot)
+        event     (build-event id)
+        snapshot' (-> (reduce-event snapshot event)
+                      (update :next-event-id inc))]
+    {:snapshot snapshot' :event event}))

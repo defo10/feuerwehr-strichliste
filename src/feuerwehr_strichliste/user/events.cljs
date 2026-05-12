@@ -36,11 +36,11 @@
  ::user-create
  (fn-traced [{:keys [db]} [_ {:keys [name role pin]}]]
             (let [actor-id   (get-in db [:ui :current-user-id])
-                  actor-role (get-in db [:domain :users actor-id :user/role])]
+                  actor-role (get-in db [:snapshot :users actor-id :user/role])]
               (if (permissions/can? actor-role :manage-users)
-                (let [{:keys [domain event]}
+                (let [{:keys [snapshot event]}
                       (reducer/apply-event
-                       (:domain db)
+                       (:snapshot db)
                        (fn [id]
                          {:event/type      :user/created
                           :event/id        id
@@ -49,21 +49,21 @@
                           :user/name       name
                           :user/role       role
                           :user/pin-hash   (.hashSync bcrypt pin 10)}))]
-                  {:db       (assoc db :domain domain)
-                   :persist! {:events [event] :snapshot domain}})
+                  {:db       (assoc db :snapshot snapshot)
+                   :persist! {:events [event] :snapshot snapshot}})
                 {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
 
 (re-frame/reg-event-fx
  ::user-update
  (fn-traced [{:keys [db]} [_ {:keys [id name role status pin]}]]
             (let [actor-id   (get-in db [:ui :current-user-id])
-                  actor-role (get-in db [:domain :users actor-id :user/role])
+                  actor-role (get-in db [:snapshot :users actor-id :user/role])
                   self?      (= actor-id id)]
               (if (or self? (permissions/can? actor-role :manage-users))
-                (let [current (get-in db [:domain :users id])
-                      {:keys [domain event]}
+                (let [current (get-in db [:snapshot :users id])
+                      {:keys [snapshot event]}
                       (reducer/apply-event
-                       (:domain db)
+                       (:snapshot db)
                        (fn [ev-id]
                          (cond-> {:event/type      :user/updated
                                   :event/id        ev-id
@@ -75,23 +75,23 @@
                                   :user/status     (or status (:user/status current))}
                            (not (str/blank? pin))
                            (assoc :user/pin-hash (.hashSync bcrypt pin 10)))))]
-                  {:db       (assoc db :domain domain)
-                   :persist! {:events [event] :snapshot domain}})
+                  {:db       (assoc db :snapshot snapshot)
+                   :persist! {:events [event] :snapshot snapshot}})
                 {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
 
 ;; Legacy event kept for compatibility
 (re-frame/reg-event-fx
  :command/create-user
  (fn-traced [{:keys [db]} [_ {:keys [name role pin-hash]}]]
-   (let [{:keys [domain event]} (reducer/apply-event
-                                 (:domain db)
-                                 (fn [id]
-                                   {:event/type      :user/created
-                                    :event/id        id
-                                    :event/timestamp (.toISOString (js/Date.))
-                                    :event/actor     (get-in db [:ui :current-user-id])
-                                    :user/name       name
-                                    :user/role       role
-                                    :user/pin-hash   pin-hash}))]
-     {:db       (assoc db :domain domain)
-      :persist! {:events [event] :snapshot domain}})))
+   (let [{:keys [snapshot event]} (reducer/apply-event
+                                   (:snapshot db)
+                                   (fn [id]
+                                     {:event/type      :user/created
+                                      :event/id        id
+                                      :event/timestamp (.toISOString (js/Date.))
+                                      :event/actor     (get-in db [:ui :current-user-id])
+                                      :user/name       name
+                                      :user/role       role
+                                      :user/pin-hash   pin-hash}))]
+     {:db       (assoc db :snapshot snapshot)
+      :persist! {:events [event] :snapshot snapshot}})))

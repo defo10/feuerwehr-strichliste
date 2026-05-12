@@ -33,12 +33,12 @@
         seed-items)))
 
 (def empty-db
-  {:domain reducer/empty-snapshot
-   :ui     (merge auth-db/default-ui user-db/default-ui item-db/default-ui)})
+  {:snapshot reducer/empty-snapshot
+   :ui       (merge auth-db/default-ui user-db/default-ui item-db/default-ui)})
 
 (def default-db
-  {:domain (reduce (fn [domain event]
-                     (:domain (reducer/apply-event domain #(assoc event :event/id %))))
-                   reducer/empty-snapshot
-                   (seed-events))
-   :ui     (merge auth-db/default-ui user-db/default-ui item-db/default-ui)})
+  {:snapshot (reduce (fn [snapshot event]
+                       (:snapshot (reducer/apply-event snapshot #(assoc event :event/id %))))
+                     reducer/empty-snapshot
+                     (seed-events))
+   :ui       (merge auth-db/default-ui user-db/default-ui item-db/default-ui)})

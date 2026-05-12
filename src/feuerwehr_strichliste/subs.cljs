@@ -15,14 +15,14 @@
 (re-frame/reg-sub
  ::current-user
  (fn [db _]
-   (get-in db [:domain :users (get-in db [:ui :current-user-id])])))
+   (get-in db [:snapshot :users (get-in db [:ui :current-user-id])])))
 
 (re-frame/reg-sub
  ::current-user-balance
  (fn [db _]
-   (get-in db [:domain :balances (get-in db [:ui :current-user-id])] 0)))
+   (get-in db [:snapshot :balances (get-in db [:ui :current-user-id])] 0)))
 
 (re-frame/reg-sub
  ::all-balances
  (fn [db _]
-   (get-in db [:domain :balances])))
+   (get-in db [:snapshot :balances])))
