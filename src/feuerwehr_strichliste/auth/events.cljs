@@ -46,13 +46,13 @@
            {:db       (-> db'
                           (assoc :domain domain)
                           (assoc-in [:ui :current-user-id] (:user/id user)))
-            :persist! {:event event :snapshot domain}
+            :persist! {:events [event] :snapshot domain}
             :navigate :overview}
            {:db       (-> db'
                           (assoc :domain domain)
                           (assoc-in [:ui :pin :digits] "")
                           (assoc-in [:ui :pin :error] "Falsche PIN"))
-            :persist! {:event event :snapshot domain}}))))))
+            :persist! {:events [event] :snapshot domain}}))))))
 
 (re-frame/reg-event-fx
  ::sign-out
@@ -71,5 +71,5 @@
                     (assoc-in [:ui :cart] {})
                     (assoc-in [:ui :receipt] nil)
                     (assoc-in [:ui :active-tab] :drink))
-      :persist! {:event event :snapshot domain}
+      :persist! {:events [event] :snapshot domain}
       :navigate :home})))

@@ -95,16 +95,25 @@
                         [:quantity   pos-int?]
                         [:unit-price pos-int?]]]]])
 
-(def ItemUpdatedEvent
+(def ItemEditedEvent
   [:map
    [:event/id        nat-int?]
    [:event/timestamp string?]
    [:event/actor     nat-int?]
-   [:event/type      [:= :item/updated]]
+   [:event/type      [:= :item/edited]]
    [:item/id         nat-int?]
    [:item/type       [:enum :drink :food]]
    [:item/name       string?]
    [:item/price      pos-int?]
+   [:item/image-key  {:optional true} nat-int?]])
+
+(def ItemRestockedEvent
+  [:map
+   [:event/id        nat-int?]
+   [:event/timestamp string?]
+   [:event/actor     nat-int?]
+   [:event/type      [:= :item/restocked]]
+   [:item/id         nat-int?]
    [:item/stock      nat-int?]])
 
 (def UserUpdatedEvent
@@ -162,7 +171,8 @@
    [:user/created              UserCreatedEvent]
    [:user/updated              UserUpdatedEvent]
    [:item/created              ItemCreatedEvent]
-   [:item/updated              ItemUpdatedEvent]
+   [:item/edited               ItemEditedEvent]
+   [:item/restocked            ItemRestockedEvent]
    [:cart/checked-out          CartCheckedOutEvent]
    [:auth/sign-in-attempted    AuthSignInAttemptedEvent]
    [:auth/signed-out           AuthSignedOutEvent]

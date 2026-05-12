@@ -7,10 +7,11 @@
 
 (re-frame/reg-fx
  :persist!
- (fn [{:keys [event snapshot]}]
+ (fn [{:keys [events snapshot]}]
    (go
      (try
-       (<! (k/append @storage/store :event-log event))
+       (doseq [event events]
+         (<! (k/append @storage/store :event-log event)))
        (<! (k/assoc-in @storage/store [:snapshot] snapshot))
        (catch :default e
          (re-frame/dispatch [:error :errors/persist-failed (.-message e)])

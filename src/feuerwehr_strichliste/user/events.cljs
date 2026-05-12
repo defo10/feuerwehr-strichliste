@@ -50,7 +50,7 @@
                           :user/role       role
                           :user/pin-hash   (.hashSync bcrypt pin 10)}))]
                   {:db       (assoc db :domain domain)
-                   :persist! {:event event :snapshot domain}})
+                   :persist! {:events [event] :snapshot domain}})
                 {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
 
 (re-frame/reg-event-fx
@@ -76,7 +76,7 @@
                            (not (str/blank? pin))
                            (assoc :user/pin-hash (.hashSync bcrypt pin 10)))))]
                   {:db       (assoc db :domain domain)
-                   :persist! {:event event :snapshot domain}})
+                   :persist! {:events [event] :snapshot domain}})
                 {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
 
 ;; Legacy event kept for compatibility
@@ -94,4 +94,4 @@
                                     :user/role       role
                                     :user/pin-hash   pin-hash}))]
      {:db       (assoc db :domain domain)
-      :persist! {:event event :snapshot domain}})))
+      :persist! {:events [event] :snapshot domain}})))

@@ -20,7 +20,7 @@
              :top-up/user-id   user-id
              :top-up/amount    amount}))]
      {:db       (assoc db :domain domain)
-      :persist! {:event event :snapshot domain}})))
+      :persist! {:events [event] :snapshot domain}})))
 
 (re-frame/reg-event-fx
  ::confirm-top-up
@@ -38,7 +38,7 @@
                  :event/actor       actor-id
                  :top-up/request-id request-id}))]
          {:db       (assoc db :domain domain)
-          :persist! {:event event :snapshot domain}})
+          :persist! {:events [event] :snapshot domain}})
        {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
 
 (re-frame/reg-event-fx
@@ -61,5 +61,5 @@
                  :event/actor       actor-id
                  :top-up/request-id request-id}))]
          {:db       (assoc db :domain domain)
-          :persist! {:event event :snapshot domain}})
+          :persist! {:events [event] :snapshot domain}})
        {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))

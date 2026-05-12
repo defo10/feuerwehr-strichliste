@@ -9,6 +9,9 @@
    :top-ups       {}
    :next-event-id 0})
 
+(defn- merge-non-nil [target updates]
+  (reduce-kv (fn [m k v] (if (nil? v) m (assoc m k v))) target updates))
+
 (defmulti reduce-event (fn [_snapshot event] (:event/type event)))
 
 (defmethod reduce-event :user/updated
@@ -27,13 +30,17 @@
              :user/pin-hash pin-hash
              :user/status   :active}))
 
-(defmethod reduce-event :item/updated
-  [snapshot {:keys [item/id item/type item/name item/price item/stock]}]
+(defmethod reduce-event :item/edited
+  [snapshot {:keys [item/id item/type item/name item/price item/image-key]}]
   (update-in snapshot [:items id]
-             merge {:item/type  type
-                    :item/name  name
-                    :item/price price
-                    :item/stock stock}))
+             merge-non-nil {:item/type      type
+                            :item/name      name
+                            :item/price     price
+                            :item/image-key image-key}))
+
+(defmethod reduce-event :item/restocked
+  [snapshot {:keys [item/id item/stock]}]
+  (assoc-in snapshot [:items id :item/stock] stock))
 
 (defmethod reduce-event :item/created
   [snapshot {:keys [event/id

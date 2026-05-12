@@ -54,28 +54,60 @@
             (let [user-id (get-in db [:ui :current-user-id])
                   role    (get-in db [:domain :users user-id :user/role])]
               (if (permissions/can? role :manage-items)
-                (let [{:keys [domain event]} (reducer/apply-event
-                                              (:domain db)
-                                              (fn [ev-id]
-                                                {:event/type      :item/updated
-                                                 :event/id        ev-id
-                                                 :event/timestamp (.toISOString (js/Date.))
-                                                 :event/actor     user-id
-                                                 :item/id         id
-                                                 :item/type       type
-                                                 :item/name       name
-                                                 :item/price      price
-                                                 :item/stock      stock}))
-                      base (assoc db :domain domain)
-                      db'  (if image
-                             ; revoke the old URL before replacing it — object URLs hold the blob
-                             ; in memory until explicitly revoked or the page unloads
-                             (do (some-> (get-in base [:ui :item-images id]) js/URL.revokeObjectURL)
-                                 (assoc-in base [:ui :item-images id] (js/URL.createObjectURL image)))
-                             base)]
-                  (merge {:db       db'
-                          :persist! {:event event :snapshot domain}}
-                         (when image {:persist-image! {:item-id id :blob image}})))
+                (let [current           (get-in db [:domain :items id])
+                      metadata-changed? (or image
+                                            (not= type  (:item/type current))
+                                            (not= name  (:item/name current))
+                                            (not= price (:item/price current)))
+                      stock-changed?    (not= stock (:item/stock current))
+                      ts                (.toISOString (js/Date.))
+
+                      [domain1 edit-event]
+                      (if metadata-changed?
+                        (let [{:keys [domain event]}
+                              (reducer/apply-event
+                               (:domain db)
+                               (fn [ev-id]
+                                 (merge {:event/type      :item/edited
+                                         :event/id        ev-id
+                                         :event/timestamp ts
+                                         :event/actor     user-id
+                                         :item/id         id
+                                         :item/type       type
+                                         :item/name       name
+                                         :item/price      price}
+                                        (when image {:item/image-key id}))))]
+                          [domain event])
+                        [(:domain db) nil])
+
+                      [domain2 restock-event]
+                      (if stock-changed?
+                        (let [{:keys [domain event]}
+                              (reducer/apply-event
+                               domain1
+                               (fn [ev-id]
+                                 {:event/type      :item/restocked
+                                  :event/id        ev-id
+                                  :event/timestamp ts
+                                  :event/actor     user-id
+                                  :item/id         id
+                                  :item/stock      stock}))]
+                          [domain event])
+                        [domain1 nil])
+
+                      events (filterv some? [edit-event restock-event])]
+                  (if (seq events)
+                    (let [base (assoc db :domain domain2)
+                          db'  (if image
+                                 ; revoke the old URL before replacing it — object URLs hold the blob
+                                 ; in memory until explicitly revoked or the page unloads
+                                 (do (some-> (get-in base [:ui :item-images id]) js/URL.revokeObjectURL)
+                                     (assoc-in base [:ui :item-images id] (js/URL.createObjectURL image)))
+                                 base)]
+                      (merge {:db       db'
+                              :persist! {:events events :snapshot domain2}}
+                             (when image {:persist-image! {:item-id id :blob image}})))
+                    {:db db}))
                 {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
 
 (re-frame/reg-event-db
@@ -145,7 +177,7 @@
                                                                             :unit-price (:item/price item)})
                                                                          entries))}))]
               {:db       (assoc db :domain domain)
-               :persist! {:event event :snapshot domain}})))
+               :persist! {:events [event] :snapshot domain}})))
 
 (re-frame/reg-event-fx
  ::item-create
@@ -168,8 +200,8 @@
                       item-id (:event/id event)
                       db'     (cond-> (assoc db :domain domain)
                                 image (assoc-in [:ui :item-images item-id]
-                                               (js/URL.createObjectURL image)))]
+                                                (js/URL.createObjectURL image)))]
                   (merge {:db       db'
-                          :persist! {:event event :snapshot domain}}
+                          :persist! {:events [event] :snapshot domain}}
                          (when image {:persist-image! {:item-id item-id :blob image}})))
                 {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
