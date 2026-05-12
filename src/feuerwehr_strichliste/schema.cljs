@@ -151,7 +151,9 @@
    [:event/timestamp    string?]
    [:event/actor        nat-int?]
    [:event/type         [:= :balance/top-up-cancelled]]
-   [:top-up/request-id  nat-int?]])
+   [:top-up/request-id  nat-int?]
+   [:top-up/user-id     nat-int?]
+   [:top-up/amount      pos-int?]])
 
 (def TopUp
   [:map
@@ -185,7 +187,6 @@
    [:users          [:map-of nat-int? User]]
    [:balances       [:map-of nat-int? number?]]
    [:items          [:map-of nat-int? Item]]
-   [:top-ups        [:map-of nat-int? TopUp]]
    [:next-event-id  nat-int?]])
 
 (comment

@@ -45,11 +45,13 @@
          (if valid?
            {:db       (-> db'
                           (assoc :snapshot snapshot)
+                          (update :event-log conj event)
                           (assoc-in [:ui :current-user-id] (:user/id user)))
             :persist! {:events [event] :snapshot snapshot}
             :navigate :overview}
            {:db       (-> db'
                           (assoc :snapshot snapshot)
+                          (update :event-log conj event)
                           (assoc-in [:ui :pin :digits] "")
                           (assoc-in [:ui :pin :error] "Falsche PIN"))
             :persist! {:events [event] :snapshot snapshot}}))))))
@@ -66,6 +68,7 @@
                                        :event/actor     (get-in db [:ui :current-user-id])}))]
      {:db       (-> db
                     (assoc :snapshot snapshot)
+                    (update :event-log conj event)
                     (assoc-in [:ui :current-user-id] nil)
                     (assoc-in [:ui :pin] {:user nil :digits "" :error nil :success false})
                     (assoc-in [:ui :cart] {})

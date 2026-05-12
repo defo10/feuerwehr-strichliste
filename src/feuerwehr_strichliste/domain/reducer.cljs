@@ -6,7 +6,6 @@
   {:users         {}
    :balances      {}
    :items         {}
-   :top-ups       {}
    :next-event-id 0})
 
 (defn- merge-non-nil [target updates]
@@ -68,33 +67,16 @@
           entries))
 
 (defmethod reduce-event :balance/top-up-requested
-  [snapshot {:keys [event/id event/actor event/timestamp top-up/user-id top-up/amount]}]
-  (-> snapshot
-      (update-in [:balances user-id] (fnil + 0) amount)
-      (assoc-in [:top-ups id]
-                {:top-up/id           id
-                 :top-up/user-id      user-id
-                 :top-up/amount       amount
-                 :top-up/requested-at timestamp
-                 :top-up/requested-by actor
-                 :top-up/status       :pending})))
+  [snapshot {:keys [top-up/user-id top-up/amount]}]
+  (update-in snapshot [:balances user-id] (fnil + 0) amount))
 
 (defmethod reduce-event :balance/top-up-confirmed
-  [snapshot {:keys [event/actor event/timestamp top-up/request-id]}]
-  (update-in snapshot [:top-ups request-id] merge
-             {:top-up/status       :confirmed
-              :top-up/confirmed-at timestamp
-              :top-up/confirmed-by actor}))
+  [snapshot _event]
+  snapshot)
 
 (defmethod reduce-event :balance/top-up-cancelled
-  [snapshot {:keys [event/actor event/timestamp top-up/request-id]}]
-  (let [{:top-up/keys [amount user-id]} (get-in snapshot [:top-ups request-id])]
-    (-> snapshot
-        (update-in [:balances user-id] - amount)
-        (update-in [:top-ups request-id] merge
-                   {:top-up/status       :cancelled
-                    :top-up/cancelled-at timestamp
-                    :top-up/cancelled-by actor}))))
+  [snapshot {:keys [top-up/user-id top-up/amount]}]
+  (update-in snapshot [:balances user-id] - amount))
 
 (defmethod reduce-event :auth/sign-in-attempted
   [snapshot _event]

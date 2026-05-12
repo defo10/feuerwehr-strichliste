@@ -5,6 +5,21 @@
    [feuerwehr-strichliste.domain.permissions :as permissions]
    [day8.re-frame.tracing :refer-macros [fn-traced]]))
 
+(defn- find-top-up [event-log request-id]
+  (let [request   (first (filter #(and (= :balance/top-up-requested (:event/type %))
+                                       (= request-id (:event/id %)))
+                                 event-log))
+        resolved? (some #(and (#{:balance/top-up-confirmed :balance/top-up-cancelled}
+                                (:event/type %))
+                              (= request-id (:top-up/request-id %)))
+                        event-log)]
+    (when request
+      {:top-up/id           request-id
+       :top-up/user-id      (:top-up/user-id request)
+       :top-up/amount       (:top-up/amount request)
+       :top-up/requested-by (:event/actor request)
+       :top-up/status       (if resolved? :resolved :pending)})))
+
 (re-frame/reg-event-fx
  ::request-top-up
  (fn-traced [{:keys [db]} [_ {:keys [user-id amount]}]]
@@ -19,7 +34,7 @@
              :event/actor      actor-id
              :top-up/user-id   user-id
              :top-up/amount    amount}))]
-     {:db       (assoc db :snapshot snapshot)
+     {:db       (assoc db :snapshot snapshot :event-log (conj (:event-log db) event))
       :persist! {:events [event] :snapshot snapshot}})))
 
 (re-frame/reg-event-fx
@@ -37,19 +52,19 @@
                  :event/timestamp   (.toISOString (js/Date.))
                  :event/actor       actor-id
                  :top-up/request-id request-id}))]
-         {:db       (assoc db :snapshot snapshot)
+         {:db       (assoc db :snapshot snapshot :event-log (conj (:event-log db) event))
           :persist! {:events [event] :snapshot snapshot}})
        {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
 
 (re-frame/reg-event-fx
  ::cancel-top-up
  (fn-traced [{:keys [db]} [_ request-id]]
-   (let [actor-id     (get-in db [:ui :current-user-id])
-         actor-role   (get-in db [:snapshot :users actor-id :user/role])
-         top-up       (get-in db [:snapshot :top-ups request-id])
-         can-cancel?  (and (= :pending (:top-up/status top-up))
-                           (or (= actor-id (:top-up/requested-by top-up))
-                               (permissions/can? actor-role :confirm-top-ups)))]
+   (let [actor-id   (get-in db [:ui :current-user-id])
+         actor-role (get-in db [:snapshot :users actor-id :user/role])
+         top-up     (find-top-up (:event-log db) request-id)
+         can-cancel? (and (= :pending (:top-up/status top-up))
+                          (or (= actor-id (:top-up/requested-by top-up))
+                              (permissions/can? actor-role :confirm-top-ups)))]
      (if can-cancel?
        (let [{:keys [snapshot event]}
              (reducer/apply-event
@@ -59,7 +74,9 @@
                  :event/id          id
                  :event/timestamp   (.toISOString (js/Date.))
                  :event/actor       actor-id
-                 :top-up/request-id request-id}))]
-         {:db       (assoc db :snapshot snapshot)
+                 :top-up/request-id request-id
+                 :top-up/user-id    (:top-up/user-id top-up)
+                 :top-up/amount     (:top-up/amount top-up)}))]
+         {:db       (assoc db :snapshot snapshot :event-log (conj (:event-log db) event))
           :persist! {:events [event] :snapshot snapshot}})
        {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))

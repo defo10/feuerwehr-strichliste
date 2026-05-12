@@ -14,6 +14,13 @@
  (fn-traced [_ _]
    db/empty-db))
 
+(re-frame/reg-event-db
+ ::initialize-from-storage
+ (fn-traced [_ [_ {:keys [snapshot event-log]}]]
+   (assoc db/empty-db
+          :snapshot  snapshot
+          :event-log event-log)))
+
 (re-frame/reg-event-fx
  ::navigate
  (fn-traced [_ [_ handler]]

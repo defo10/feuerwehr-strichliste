@@ -32,13 +32,22 @@
                  item))
         seed-items)))
 
+(def ^:private default-ui
+  (merge auth-db/default-ui user-db/default-ui item-db/default-ui))
+
 (def empty-db
-  {:snapshot reducer/empty-snapshot
-   :ui       (merge auth-db/default-ui user-db/default-ui item-db/default-ui)})
+  {:snapshot  reducer/empty-snapshot
+   :event-log []
+   :ui        default-ui})
 
 (def default-db
-  {:snapshot (reduce (fn [snapshot event]
-                       (:snapshot (reducer/apply-event snapshot #(assoc event :event/id %))))
-                     reducer/empty-snapshot
-                     (seed-events))
-   :ui       (merge auth-db/default-ui user-db/default-ui item-db/default-ui)})
+  (let [{:keys [snapshot event-log]}
+        (reduce (fn [{:keys [snapshot event-log]} seed-event]
+                  (let [{s :snapshot e :event}
+                        (reducer/apply-event snapshot #(assoc seed-event :event/id %))]
+                    {:snapshot s :event-log (conj event-log e)}))
+                {:snapshot reducer/empty-snapshot :event-log []}
+                (seed-events))]
+    {:snapshot  snapshot
+     :event-log event-log
+     :ui        default-ui}))

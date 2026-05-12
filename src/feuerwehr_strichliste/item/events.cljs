@@ -97,7 +97,7 @@
 
                       events (filterv some? [edit-event restock-event])]
                   (if (seq events)
-                    (let [base (assoc db :snapshot snapshot2)
+                    (let [base (-> db (assoc :snapshot snapshot2) (update :event-log into events))
                           db'  (if image
                                  ; revoke the old URL before replacing it — object URLs hold the blob
                                  ; in memory until explicitly revoked or the page unloads
@@ -148,10 +148,24 @@
                   total   (reduce (fn [sum {:keys [item quantity]}]
                                     (+ sum (* quantity (:item/price item))))
                                   0 pairs)
-                  top-ups (->> (vals (get-in db [:snapshot :top-ups]))
-                               (filter #(and (= (:top-up/user-id %) user-id)
-                                             (= (:top-up/status %) :pending)))
-                               (sort-by :top-up/requested-at))]
+                  top-ups (let [event-log (:event-log db)
+                               requests  (into {} (keep (fn [event]
+                                                          (when (and (= :balance/top-up-requested (:event/type event))
+                                                                     (= user-id (:top-up/user-id event)))
+                                                            [(:event/id event) event]))
+                                                        event-log))
+                               resolved  (into #{} (keep (fn [event]
+                                                           (when (#{:balance/top-up-confirmed :balance/top-up-cancelled}
+                                                                  (:event/type event))
+                                                             (:top-up/request-id event)))
+                                                         event-log))]
+                           (->> requests
+                                (keep (fn [[id event]]
+                                        (when-not (resolved id)
+                                          {:top-up/id           id
+                                           :top-up/amount       (:top-up/amount event)
+                                           :top-up/requested-at (:event/timestamp event)})))
+                                (sort-by :top-up/requested-at)))]
               (assoc-in db [:ui :receipt] {:entries pairs :total total :top-ups top-ups}))))
 
 (re-frame/reg-event-db
@@ -176,7 +190,7 @@
                                                                               :quantity   quantity
                                                                               :unit-price (:item/price item)})
                                                                            entries))}))]
-              {:db       (assoc db :snapshot snapshot)
+              {:db       (assoc db :snapshot snapshot :event-log (conj (:event-log db) event))
                :persist! {:events [event] :snapshot snapshot}})))
 
 (re-frame/reg-event-fx
@@ -198,7 +212,7 @@
                                                           :item/stock      stock}
                                                          (when image {:item/image-key id}))))
                       item-id (:event/id event)
-                      db'     (cond-> (assoc db :snapshot snapshot)
+                      db'     (cond-> (-> db (assoc :snapshot snapshot) (update :event-log conj event))
                                 image (assoc-in [:ui :item-images item-id]
                                                 (js/URL.createObjectURL image)))]
                   (merge {:db       db'

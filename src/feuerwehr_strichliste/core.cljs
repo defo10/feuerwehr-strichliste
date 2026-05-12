@@ -67,7 +67,9 @@
   (pushy/start! history)
   (dev-setup)
   (storage/init!
-   (fn []
-     (re-frame/dispatch-sync [::events/initialize-db])
+   (fn [stored]
+     (re-frame/dispatch-sync (if stored
+                               [::events/initialize-from-storage stored]
+                               [::events/initialize-db]))
      (re-frame/dispatch [::item-events/load-images])
      (mount-root))))

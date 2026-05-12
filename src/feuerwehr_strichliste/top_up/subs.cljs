@@ -3,10 +3,35 @@
             [feuerwehr-strichliste.subs :as app-subs]
             [feuerwehr-strichliste.domain.permissions :as permissions]))
 
+; Scans the full event log on every change. An intermediate filtered-events sub would avoid
+; unnecessary re-runs, but this sub is only active on the top-ups page so the cost is acceptable.
 (re-frame/reg-sub
  ::top-ups-map
- (fn [db _]
-   (get-in db [:snapshot :top-ups])))
+ :<- [::app-subs/event-log]
+ (fn [event-log _]
+   (reduce (fn [m event]
+             (case (:event/type event)
+               :balance/top-up-requested
+               (assoc m (:event/id event)
+                      {:top-up/id           (:event/id event)
+                       :top-up/user-id      (:top-up/user-id event)
+                       :top-up/amount       (:top-up/amount event)
+                       :top-up/requested-at (:event/timestamp event)
+                       :top-up/requested-by (:event/actor event)
+                       :top-up/status       :pending})
+               :balance/top-up-confirmed
+               (update m (:top-up/request-id event) merge
+                       {:top-up/status       :confirmed
+                        :top-up/confirmed-at (:event/timestamp event)
+                        :top-up/confirmed-by (:event/actor event)})
+               :balance/top-up-cancelled
+               (update m (:top-up/request-id event) merge
+                       {:top-up/status       :cancelled
+                        :top-up/cancelled-at (:event/timestamp event)
+                        :top-up/cancelled-by (:event/actor event)})
+               m))
+           {}
+           event-log)))
 
 (re-frame/reg-sub
  ::top-ups-sorted

@@ -26,3 +26,8 @@
  ::all-balances
  (fn [db _]
    (get-in db [:snapshot :balances])))
+
+(re-frame/reg-sub
+ ::event-log
+ (fn [db _]
+   (get db :event-log)))
