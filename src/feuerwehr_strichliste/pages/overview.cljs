@@ -22,23 +22,6 @@
 (defn- balance-class [cents]
   (cond (pos? cents) "positive" (neg? cents) "negative" :else "zero"))
 
-(defn- actions-for [role]
-  (when (= role :admin)
-    [{:icon "👥" :color "#9C27B0" :title "Nutzer verwalten"
-      :on-click #(re-frame/dispatch [::events/navigate :users])}
-     {:icon "💰" :color "#3F51B5" :title "Einzahlungen überblicken"
-      :on-click #(re-frame/dispatch [::events/navigate :top-ups])}]))
-
-(defn- action-button [{:keys [icon color title on-click]}]
-  [:button.action-button {:style {:background color} :on-click on-click}
-   [:span.action-icon icon]
-   [:span.action-title title]])
-
-(defn- action-bar [actions]
-  [:div.action-bar
-   (for [{:keys [title] :as action} actions]
-     ^{:key title} [action-button action])])
-
 (defn overview-page []
   (let [current-user  (re-frame/subscribe [::app-subs/current-user])
         balance       (re-frame/subscribe [::app-subs/current-user-balance])
@@ -60,29 +43,43 @@
             has-cart? @has-items?
             projected (- bal cart)
             tab       @active-tab
-            actions   (actions-for (:user/role user))]
+            admin?    (= :admin (:user/role user))]
         [:<>
          [:div
           [:nav.top-nav
-           [:div.top-nav-identity
-            [:span.top-nav-name (:user/name user)]
-            [:button.top-nav-edit-profile
-             {:on-click #(re-frame/dispatch [::user-events/open-profile])}
-             "BEARBEITEN"]]
-           [:div.top-nav-balance-area
-            [:span.top-nav-balance {:class (balance-class (if has-cart? projected bal))}
-             (format-balance (if has-cart? projected bal))
-             (when has-cart?
-               [:span.top-nav-balance-delta (str " (-" (format-price cart) ")")])]
-            [:button.top-nav-top-up-btn {:on-click #(reset! top-up-open? true)}
-             "Geld einzahlen"]]
-           [:button.top-nav-logout
-            {:on-click #(if has-cart?
-                          (re-frame/dispatch [::item-events/show-receipt])
-                          (re-frame/dispatch [::auth-events/sign-out]))}
-            "Fertig"]]
-          (when (seq actions)
-            [action-bar actions])
+           [:div.top-nav-left
+            [:div.top-nav-identity
+             [:span.top-nav-name (:user/name user)]
+             [:button.button.is-ghost.is-small
+              {:on-click #(re-frame/dispatch [::user-events/open-profile])}
+              [:span.icon.is-small [:i.fas.fa-pen]]]]
+            (when admin?
+              [:div.top-nav-admin-actions
+               [:button.button.is-light.is-small
+                {:on-click #(re-frame/dispatch [::events/navigate :users])}
+                [:span.icon.is-small [:i.fas.fa-users]]
+                [:span "Nutzer"]]
+               [:button.button.is-light.is-small
+                {:on-click #(re-frame/dispatch [::events/navigate :top-ups])}
+                [:span.icon.is-small [:i.fas.fa-coins]]
+                [:span "Einzahlungen"]]])]
+           [:div.top-nav-right
+            [:div.top-nav-balance-area
+             [:span.top-nav-balance {:class (balance-class (if has-cart? projected bal))}
+              (format-balance (if has-cart? projected bal))
+              (when has-cart?
+                [:span.top-nav-balance-delta (str " (-" (format-price cart) ")")])]
+             [:button.button.is-light.is-small
+              {:on-click #(reset! top-up-open? true)}
+              [:span.icon.is-small [:i.fas.fa-coins]]
+              [:span "Einzahlen"]]]
+            [:button.button.is-primary
+             {:on-click #(if has-cart?
+                           (re-frame/dispatch [::item-events/show-receipt])
+                           (re-frame/dispatch [::auth-events/sign-out]))}
+             (if has-cart?
+               [:<> [:span.icon.is-small [:i.fas.fa-receipt]] [:span "Fertig"]]
+               "Fertig")]]]
           [:div.tab-bar
            [:button.tab
             {:class    (when (= tab :drink) "tab--active")
@@ -98,13 +95,13 @@
               [^{:key "new-item"}
                [:button.item-card
                 {:on-click #(reset! drawer-open? true)
-                 :style    {:background   "#4CAF50"
-                             :border-color "#4CAF50"
-                             :color        "#fff"
-                             :cursor       "pointer"
+                 :style    {:background      "#4CAF50"
+                             :border-color    "#4CAF50"
+                             :color           "#fff"
+                             :cursor          "pointer"
                              :justify-content "center"
-                             :align-items  "center"}}
-                [:span {:style {:font-size "2rem"}} "➕"]
+                             :align-items     "center"}}
+                [:span.icon.is-large [:i.fas.fa-plus]]
                 [:span {:style {:font-size "0.9rem" :font-weight 600}} "Neu"]]])
             (for [item (get @items-by-type tab [])]
               ^{:key (:item/id item)} [item-card item]))]]

@@ -13,14 +13,16 @@
      ^{:key n} [:button.pin-key {:on-click #(re-frame/dispatch [::events/pin-digit (str n)])} n])
    [:div.pin-key-spacer]
    [:button.pin-key {:on-click #(re-frame/dispatch [::events/pin-digit "0"])} "0"]
-   [:button.pin-key {:on-click #(re-frame/dispatch [::events/pin-backspace])} "←"]])
+   [:button.pin-key {:on-click #(re-frame/dispatch [::events/pin-backspace])}
+    [:span.icon [:i.fas.fa-delete-left]]]])
 
 (defn pin-modal [{:keys [user digits error success]}]
   [:div.pin-modal-overlay
    {:on-click #(re-frame/dispatch [::events/close-pin-modal])}
    [:div.pin-modal
     {:on-click #(.stopPropagation %)}
-    [:button.pin-modal-close {:on-click #(re-frame/dispatch [::events/close-pin-modal])} "×"]
+    [:button.pin-modal-close {:on-click #(re-frame/dispatch [::events/close-pin-modal])}
+     [:span.icon [:i.fas.fa-xmark]]]
     [:h2.pin-modal-title (:user/name user)]
     [pin-dots digits error]
     [:p.pin-error (or error " ")]

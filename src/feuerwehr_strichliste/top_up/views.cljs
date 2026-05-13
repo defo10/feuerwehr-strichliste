@@ -16,10 +16,11 @@
          (when admin?
            [:div.form-field
             [:label "Nutzer"]
-            [:select {:value     (:user-id f)
-                      :on-change #(swap! form assoc :user-id (js/parseInt (.. % -target -value)))}
-             (for [user all-users]
-               ^{:key (:user/id user)} [:option {:value (:user/id user)} (:user/name user)])]])
+            [:div.select.is-fullwidth
+             [:select {:value     (:user-id f)
+                       :on-change #(swap! form assoc :user-id (js/parseInt (.. % -target -value)))}
+              (for [user all-users]
+                ^{:key (:user/id user)} [:option {:value (:user/id user)} (:user/name user)])]]])
 
          [:div.form-field
           [:label "Betrag"]
@@ -44,7 +45,7 @@
            [:span.price-currency "€"]]]
 
          [:div.form-actions
-          [:button.form-submit
+          [:button.button.is-primary.is-fullwidth
            {:type     "submit"
             :disabled (zero? (:amount f))
             :on-click (fn [e]

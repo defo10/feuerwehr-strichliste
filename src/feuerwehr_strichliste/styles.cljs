@@ -45,6 +45,16 @@
      :color       "var(--color-on-surface)"
      :min-height  "100vh"}]
 
+   ;; Bulma primary color override
+   [:.button.is-primary
+    {:background-color "var(--color-primary)"
+     :border-color     "var(--color-primary)"
+     :color            "var(--color-on-primary)"}
+    ["&:hover:not([disabled])" {:background-color "#a82030" :border-color "#a82030" :color "var(--color-on-primary)"}]
+    ["&:focus:not([disabled])" {:background-color "#a82030" :border-color "#a82030" :color "var(--color-on-primary)"}]]
+
+   [:.has-text-primary {:color "var(--color-primary)"}]
+
    [:.page
     {:padding "2rem 3.75rem 2rem 2rem"}]
 
@@ -89,57 +99,6 @@
     [:.user-list > :div + :div > :& {:border-top "1px solid var(--color-outline)"}]
     [:&:hover  {:background "var(--color-surface-hover)"}]
     [:&:active {:background "var(--color-surface-active)"}]]
-
-   [:.error-overlay
-    {:position        "fixed"
-     :inset           0
-     :background      "rgba(0,0,0,0.5)"
-     :display         "flex"
-     :align-items     "center"
-     :justify-content "center"
-     :z-index         100}]
-
-   [:.error-dialog
-    {:background    "var(--color-surface)"
-     :border-radius "var(--radius)"
-     :padding       "2rem"
-     :max-width      "400px"
-     :width          "90%"
-     :box-shadow    "var(--shadow-hover)"}]
-
-   [:.error-title
-    {:font-size     "1.25rem"
-     :font-weight   700
-     :margin-bottom "0.5rem"
-     :color         "var(--color-primary)"}]
-
-   [:.error-message
-    {:color         "var(--color-on-surface)"
-     :margin-bottom "1.5rem"}]
-
-   [:.error-actions
-    {:display         "flex"
-     :gap             "0.75rem"
-     :justify-content "flex-end"}]
-
-   [:.error-reload
-    {:background    "var(--color-primary)"
-     :color         "var(--color-on-primary)"
-     :border        "none"
-     :border-radius "var(--radius)"
-     :padding       "0.6rem 1.25rem"
-     :font-size     "1rem"
-     :font-weight   600
-     :cursor        "pointer"}]
-
-   [:.error-dismiss
-    {:background    "transparent"
-     :color         "var(--color-on-surface)"
-     :border        "1px solid var(--color-outline)"
-     :border-radius "var(--radius)"
-     :padding       "0.6rem 1.25rem"
-     :font-size     "1rem"
-     :cursor        "pointer"}]
 
    [:.drawer-overlay
     {:position       "fixed"
@@ -206,17 +165,7 @@
      :flex-direction "column"
      :gap            "0.375rem"}
     [:label {:font-size   (rem 0.875)
-             :font-weight 600}]
-    [:input :select
-     {:padding       "0.625rem 0.75rem"
-      :border        "1px solid var(--color-outline)"
-      :border-radius "var(--radius)"
-      :font-size     (rem 1)
-      :color         "var(--color-on-surface)"
-      :background    "var(--color-surface)"
-      :outline       "none"
-      :width         "100%"}
-     [:&:focus {:border-color "var(--color-primary)"}]]]
+             :font-weight 600}]]
 
    [:.optional-hint
     {:color       "var(--color-on-surface-muted)"
@@ -288,20 +237,6 @@
    [:.form-actions
     {:padding-top (rem 0.5)}]
 
-   [:.form-submit
-    {:width         "100%"
-     :padding       "0.75rem"
-     :background    "var(--color-primary)"
-     :color         "var(--color-on-primary)"
-     :border        "none"
-     :border-radius "var(--radius)"
-     :font-size     (rem 1)
-     :font-weight   600
-     :cursor        "pointer"
-     :transition    "opacity 0.1s"}
-    ["&:hover:not(:disabled)" {:opacity 0.9}]
-    [:&:disabled {:opacity 0.4 :cursor "not-allowed"}]]
-
    [:.top-nav
     {:position        "sticky"
      :top             0
@@ -314,76 +249,31 @@
      :border-bottom   "1px solid var(--color-outline)"
      :z-index         10}]
 
+   [:.top-nav-left
+    {:display     "flex"
+     :align-items "center"
+     :gap         (rem 1)}]
+
+   [:.top-nav-right
+    {:display     "flex"
+     :align-items "center"
+     :gap         (rem 0.75)}]
+
    [:.top-nav-identity
     {:display     "flex"
-     :align-items "baseline"
-     :gap         (rem 0.5)}]
+     :align-items "center"
+     :gap         (rem 0.25)}
+    [:.button.is-ghost {:color "var(--color-on-surface-muted)"}
+     [:&:hover {:color "var(--color-on-surface)"}]]]
 
    [:.top-nav-name
     {:font-weight 600
      :font-size   (rem 1.1)}]
 
-   [:.top-nav-edit-profile
-    {:background  "none"
-     :border      "none"
-     :font-size   (rem 0.7)
-     :font-weight 700
-     :letter-spacing "0.05em"
-     :color       "var(--color-on-surface-muted)"
-     :cursor      "pointer"
-     :padding     0}
-    [:&:hover {:color "var(--color-on-surface)"}]]
-
-   [:.action-bar
-    {:display    "flex"
-     :gap        (rem 0.75)
-     :padding    "1rem 1.5rem"
-     :overflow-x "auto"}]
-
-   [:.action-button
-    {:display        "flex"
-     :flex-direction "column"
-     :align-items    "flex-start"
-     :justify-content "space-between"
-     :width          (px 140)
-     :height         (px 140)
-     :border         "none"
-     :border-radius  "var(--radius)"
-     :cursor         "pointer"
-     :padding        "1rem"
-     :flex-shrink    0
-     :transition     "opacity 0.1s"}
-    [:&:hover {:opacity 0.85}]]
-
-   [:.action-icon
-    {:font-size (rem 2)}]
-
-   [:.action-title
-    {:font-size   (rem 0.9)
-     :font-weight 600
-     :text-align  "left"
-     :color       "#ffffff"
-     :line-height 1.3}]
-
-   [:.top-nav-back
-    {:background  "none"
-     :border      "none"
-     :font-size   (rem 1.25)
-     :font-weight 400
-     :color       "var(--color-on-surface)"
-     :cursor      "pointer"
-     :padding     0}
-    [:&:hover {:opacity 0.7}]]
-
-   [:.top-nav-logout
-    {:background  "none"
-     :border      "none"
-     :font-size   (rem 1)
-     :font-weight 600
-     :color       "var(--color-primary)"
-     :cursor      "pointer"
-     :padding     0}
-    [:&:hover {:opacity 0.8}]]
+   [:.top-nav-admin-actions
+    {:display     "flex"
+     :gap         "0.5rem"
+     :align-items "center"}]
 
    [:.pin-modal-overlay
     {:position        "fixed"
@@ -582,7 +472,6 @@
      :text-align            "center"
      :font-variant-numeric  "tabular-nums"}]
 
-
    [:.receipt-overlay
     {:position        "fixed"
      :inset           0
@@ -674,32 +563,17 @@
      :transition    "opacity 0.1s"}
     [:&:hover {:opacity 0.9}]]
 
-   [:.data-table-header
-    {:grid-column           "1 / -1"
-     :display               "grid"
-     :grid-template-columns "subgrid"
-     :padding               "0.5rem 0"
-     :border-bottom         "2px solid var(--color-outline)"
-     :font-size             (rem 0.8)
-     :font-weight           600
-     :color                 "var(--color-on-surface-muted)"}]
-
-   [:.data-table-row
-    {:grid-column           "1 / -1"
-     :display               "grid"
-     :grid-template-columns "subgrid"
-     :align-items           "center"
-     :border-bottom         "1px solid var(--color-outline)"}
-    ["&.cancelled" {:opacity "0.5"}]]
-
-   [:.data-table-cell
-    {:padding "0.75rem 0"}]
-
-   [:.users-table
-    {:display               "grid"
-     :grid-template-columns "1fr max-content max-content max-content max-content"
-     :column-gap            (rem 1)
-     :padding               "0 1.5rem"}]
+   [:.receipt-edit
+    {:padding       "0.875rem 1.25rem"
+     :background    "transparent"
+     :color         "var(--color-on-surface)"
+     :border        "1px solid var(--color-outline)"
+     :border-radius "var(--radius)"
+     :font-size     (rem 1.1)
+     :font-weight   600
+     :cursor        "pointer"
+     :transition    "background 0.1s"}
+    [:&:hover {:background "var(--color-surface-hover)"}]]
 
    [:.col-header
     {:background  "none"
@@ -712,44 +586,6 @@
      :text-align  "left"
      :white-space "nowrap"}
     [:&:hover {:color "var(--color-on-surface)"}]]
-
-   [:.users-table-name
-    {:font-weight 500}]
-
-   [:.role-select
-    {:font-size     (rem 0.875)
-     :padding       "0.25rem 0.5rem"
-     :border        "1px solid var(--color-outline)"
-     :border-radius "var(--radius)"
-     :background    "var(--color-surface)"
-     :color         "var(--color-on-surface)"
-     :cursor        "pointer"
-     :width         "100%"}
-    [:&:focus {:outline      "none"
-               :border-color "var(--color-primary)"}]]
-
-   [:.role-label
-    {:font-size (rem 0.875)
-     :color     "var(--color-on-surface-muted)"}]
-
-   [:.status-badge
-    {:font-size   (rem 0.8)
-     :font-weight 600}
-    ["&.active"    {:color "green"}]
-    ["&.inactive"  {:color "var(--color-on-surface-muted)"}]
-    ["&.suspended" {:color "var(--color-primary)"}]]
-
-   [:.receipt-edit
-    {:padding       "0.875rem 1.25rem"
-     :background    "transparent"
-     :color         "var(--color-on-surface)"
-     :border        "1px solid var(--color-outline)"
-     :border-radius "var(--radius)"
-     :font-size     (rem 1.1)
-     :font-weight   600
-     :cursor        "pointer"
-     :transition    "background 0.1s"}
-    [:&:hover {:background "var(--color-surface-hover)"}]]
 
    [:.top-nav-balance-area
     {:display     "flex"
@@ -770,71 +606,6 @@
      :font-weight           600
      :font-variant-numeric  "tabular-nums"
      :color                 "var(--color-primary)"}]
-
-   [:.top-nav-top-up-btn
-    {:background     "none"
-     :border         "none"
-     :font-size      (rem 0.7)
-     :font-weight    700
-     :letter-spacing "0.05em"
-     :color          "var(--color-on-surface-muted)"
-     :cursor         "pointer"
-     :padding        0}
-    [:&:hover {:color "var(--color-on-surface)"}]]
-
-   [:.top-ups-table
-    {:display               "grid"
-     :grid-template-columns "1fr 80px 150px auto"
-     :column-gap            (rem 1)
-     :padding               "0 1.5rem"}]
-
-   [:.top-ups-table-name
-    {:font-weight 500}]
-
-   [:.top-ups-table-amount
-    {:font-weight           600
-     :font-variant-numeric  "tabular-nums"}]
-
-   [:.top-ups-table-date
-    {:font-size (rem 0.875)
-     :color     "var(--color-on-surface-muted)"}]
-
-   [:.top-ups-table-actions
-    {:display "flex"
-     :gap     (rem 0.5)}]
-
-   [:.top-up-btn
-    {:padding       "0.375rem 0.75rem"
-     :border-radius "var(--radius)"
-     :border        "none"
-     :font-size     (rem 0.875)
-     :font-weight   600
-     :cursor        "pointer"
-     :transition    "opacity 0.1s"}
-    [:&:hover {:opacity 0.8}]
-    ["&.confirm" {:background "green" :color "#fff"}]
-    ["&.cancel"  {:background "transparent"
-                  :color      "var(--color-on-surface-muted)"
-                  :border     "1px solid var(--color-outline)"}]]
-
-   [:.top-up-status-label
-    {:display        "flex"
-     :flex-direction "column"
-     :gap            "0.1rem"
-     :font-size      (rem 0.875)
-     :font-weight    500
-     :color          "green"}
-    ["&.muted" {:color "var(--color-on-surface-muted)"}]]
-
-   [:.top-up-status-when
-    {:font-size  (rem 0.75)
-     :font-weight 400
-     :color      "var(--color-on-surface-muted)"}]
-
-   [:.top-ups-empty
-    {:padding   "2rem 0"
-     :color     "var(--color-on-surface-muted)"
-     :font-size (rem 1)}]
 
    [:.alphabet-bar
     {:position       "fixed"

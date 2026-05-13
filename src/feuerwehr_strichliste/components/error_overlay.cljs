@@ -5,14 +5,18 @@
 (defn error-overlay []
   (let [error (re-frame/subscribe [::subs/error])]
     (when @error
-      [:div.error-overlay
-       [:div.error-dialog
-        [:h2.error-title "Fehler"]
-        [:p.error-message (:message @error)]
-        [:div.error-actions
-         [:button.error-reload
-          {:on-click #(.reload js/location)}
-          "Neu laden"]
-         [:button.error-dismiss
-          {:on-click #(re-frame/dispatch [:error/dismiss])}
-          "Schließen"]]]])))
+      [:div.modal.is-active
+       [:div.modal-background]
+       [:div.modal-card
+        [:header.modal-card-head
+         [:p.modal-card-title "Fehler"]]
+        [:section.modal-card-body
+         [:p (:message @error)]]
+        [:footer.modal-card-foot
+         [:div.buttons
+          [:button.button.is-danger
+           {:on-click #(.reload js/location)}
+           "Neu laden"]
+          [:button.button
+           {:on-click #(re-frame/dispatch [:error/dismiss])}
+           "Schließen"]]]]])))

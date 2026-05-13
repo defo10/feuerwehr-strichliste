@@ -29,7 +29,7 @@
            [:div.item-card-actions
             [:button.item-card-edit
              {:on-click #(re-frame/dispatch [::events/edit-item item])}
-             "✏️"]])
+             [:span.icon.is-small [:i.fas.fa-pencil]]]])
          (when image-url
            [:img.item-card-image {:src image-url :alt name}])
          [:div.item-card-header
@@ -74,7 +74,7 @@
           (for [top-up top-ups]
             ^{:key (:top-up/id top-up)}
             [:div.receipt-entry
-             [:span.receipt-entry-name "Einzahlung (ausstehend)"]
+             [:span.receipt-entry-name "Einzahlung (vorgemerkt)"]
              [:span.receipt-entry-qty ""]
              [:span.receipt-entry-price {:style {:color "green"}}
               (str "+ " (format-price (:top-up/amount top-up)))]])]])
@@ -155,10 +155,10 @@
 
          [:div.form-field
           [:label "Name"]
-          [:input {:type        "text"
-                   :placeholder "z.B. Apfelsaft"
-                   :value       (:item/name f)
-                   :on-change   #(swap! form assoc :item/name (.. % -target -value))}]]
+          [:input.input {:type        "text"
+                         :placeholder "z.B. Apfelsaft"
+                         :value       (:item/name f)
+                         :on-change   #(swap! form assoc :item/name (.. % -target -value))}]]
 
          [:div.form-field
           [:label
@@ -215,7 +215,7 @@
                                  (swap! form update :item/stock #(quot % 10))))}]]
 
          [:div.form-actions
-          [:button.form-submit
+          [:button.button.is-primary.is-fullwidth
            {:type     "submit"
             :disabled (not (valid? f))
             :on-click (fn [e]

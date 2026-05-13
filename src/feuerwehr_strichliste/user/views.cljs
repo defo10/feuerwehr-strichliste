@@ -38,42 +38,44 @@
 
          [:div.form-field
           [:label "Name"]
-          [:input {:type        "text"
-                   :placeholder "z.B. Alex Bauer"
-                   :value       (:name f)
-                   :on-change   #(swap! form assoc :name (.. % -target -value))}]]
+          [:input.input {:type        "text"
+                         :placeholder "z.B. Alex Bauer"
+                         :value       (:name f)
+                         :on-change   #(swap! form assoc :name (.. % -target -value))}]]
 
          (when (= fields :admin)
            [:div.form-field
             [:label "Rolle"]
-            [:select {:value     (name (:role f))
-                      :on-change #(swap! form assoc :role (keyword (.. % -target -value)))}
-             (for [[k label] role-labels]
-               ^{:key k} [:option {:value (name k)} label])]])
+            [:div.select.is-fullwidth
+             [:select {:value     (name (:role f))
+                       :on-change #(swap! form assoc :role (keyword (.. % -target -value)))}
+              (for [[k label] role-labels]
+                ^{:key k} [:option {:value (name k)} label])]]])
 
          (when (= fields :admin)
            [:div.form-field
             [:label "Status"]
-            [:select {:value     (name (:status f))
-                      :on-change #(swap! form assoc :status (keyword (.. % -target -value)))}
-             (for [[k label] status-labels]
-               ^{:key k} [:option {:value (name k)} label])]])
+            [:div.select.is-fullwidth
+             [:select {:value     (name (:status f))
+                       :on-change #(swap! form assoc :status (keyword (.. % -target -value)))}
+              (for [[k label] status-labels]
+                ^{:key k} [:option {:value (name k)} label])]]])
 
          [:div.form-field
           [:label (if (= mode :create) "PIN (4 Ziffern)"
                     [:<> "Neuer PIN" [:span.optional-hint " (4 Ziffern, leer lassen = unverändert)"]])]
-          [:input {:type        "password"
-                   :input-mode  "numeric"
-                   :placeholder "••••"
-                   :max-length  4
-                   :value       (:pin f)
-                   :on-change   (fn [e]
-                                  (let [v (str/replace (.. e -target -value) #"\D" "")]
-                                    (when (<= (count v) 4)
-                                      (swap! form assoc :pin v))))}]]
+          [:input.input {:type        "password"
+                         :input-mode  "numeric"
+                         :placeholder "••••"
+                         :max-length  4
+                         :value       (:pin f)
+                         :on-change   (fn [e]
+                                        (let [v (str/replace (.. e -target -value) #"\D" "")]
+                                          (when (<= (count v) 4)
+                                            (swap! form assoc :pin v))))}]]
 
          [:div.form-actions
-          [:button.form-submit
+          [:button.button.is-primary.is-fullwidth
            {:type     "submit"
             :disabled (not (valid? f mode))
             :on-click (fn [e]

@@ -18,5 +18,6 @@
                            (reset! touch-start nil))}
         [:div.drawer-header
          [:h2.drawer-title title]
-         [:button.drawer-close {:on-click on-close} "×"]]
+         [:button.drawer-close {:on-click on-close}
+          [:span.icon [:i.fas.fa-xmark]]]]
         [:div.drawer-body child]]])))
