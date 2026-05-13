@@ -1,12 +1,12 @@
 (ns feuerwehr-strichliste.domain.reducer
   (:require [feuerwehr-strichliste.schema :as schema]
+            ["uuid" :refer [v7]]
             [malli.core :as m]))
 
 (def empty-snapshot
-  {:users         {}
-   :balances      {}
-   :items         {}
-   :next-event-id 0})
+  {:users    {}
+   :balances {}
+   :items    {}})
 
 (defn- merge-non-nil [target updates]
   (reduce-kv (fn [m k v] (if (nil? v) m (assoc m k v))) target updates))
@@ -86,11 +86,10 @@
   [snapshot _event]
   snapshot)
 
-; build-event receives the assigned sequential id and must return a complete event — see schema/DomainEvent.
+; build-event receives the assigned UUIDv7 id and must return a complete event — see schema/DomainEvent.
 (defn apply-event [snapshot build-event]
   {:post [(m/validate schema/DomainEvent (:event %))]}
-  (let [id        (:next-event-id snapshot)
+  (let [id        (v7)
         event     (build-event id)
-        snapshot' (-> (reduce-event snapshot event)
-                      (update :next-event-id inc))]
+        snapshot' (reduce-event snapshot event)]
     {:snapshot snapshot' :event event}))

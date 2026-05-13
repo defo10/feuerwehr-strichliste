@@ -20,7 +20,7 @@
    (map (fn [user]
           {:event/type      :user/created
            :event/timestamp "2026-04-18T00:00:00Z"
-           :event/actor     0
+           :event/actor     "system"
            :user/name       (:user/name user)
            :user/role       (:user/role user)
            :user/pin-hash   (:user/pin-hash user)})
@@ -28,7 +28,7 @@
    (map (fn [item]
           (merge {:event/type      :item/created
                   :event/timestamp "2026-04-18T00:00:00Z"
-                  :event/actor     0}
+                  :event/actor     "system"}
                  item))
         seed-items)))
 

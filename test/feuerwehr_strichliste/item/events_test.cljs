@@ -13,11 +13,11 @@
              (re-frame/dispatch-sync [::events/initialize-empty-db]))})
 
 (defn- create-user! [role]
-  ;; Bootstrap: set actor to 0 before any user exists so the first
-  ;; user creation event has a valid nat-int? actor.
-  (swap! rf-db/app-db assoc-in [:ui :current-user-id] 0)
+  (swap! rf-db/app-db assoc-in [:ui :current-user-id] "system")
   (re-frame/dispatch-sync [:command/create-user {:name "Test" :role role :pin-hash "hash"}])
-  0)
+  (let [user-id (-> @rf-db/app-db (get-in [:snapshot :users]) keys first)]
+    (swap! rf-db/app-db assoc-in [:ui :current-user-id] user-id)
+    user-id))
 
 (def ^:private test-item
   {:item/type :drink :item/name "Test Cola" :item/price 150 :item/stock 10})
@@ -27,23 +27,23 @@
     (create-user! :admin)
     (re-frame/dispatch-sync [::item-events/item-create test-item])
     (is (some #(= "Test Cola" (:item/name %))
-              (vals (get-in @rf-db/app-db [:domain :items]))))))
+              (vals (get-in @rf-db/app-db [:snapshot :items]))))))
 
 (deftest member-cannot-create-item
   (testing "member is rejected and no item is added"
     (create-user! :member)
     (re-frame/dispatch-sync [::item-events/item-create test-item])
-    (is (empty? (get-in @rf-db/app-db [:domain :items])))))
+    (is (empty? (get-in @rf-db/app-db [:snapshot :items])))))
 
 (deftest checkout-deducts-balance-and-stock
   (testing "selecting an item and confirming receipt deducts balance and stock"
     (let [user-id (create-user! :admin)]
       (re-frame/dispatch-sync [::item-events/item-create
                                {:item/type :drink :item/name "Cola" :item/price 150 :item/stock 10}])
-      (let [item-id (-> @rf-db/app-db (get-in [:domain :items]) keys first)]
+      (let [item-id (-> @rf-db/app-db (get-in [:snapshot :items]) keys first)]
         (re-frame/dispatch-sync [::item-events/increment item-id])
         (re-frame/dispatch-sync [::item-events/show-receipt])
         (re-frame/dispatch-sync [::item-events/confirm-checkout])
         (let [db @rf-db/app-db]
-          (is (= -150 (get-in db [:domain :balances user-id])))
-          (is (= 9 (get-in db [:domain :items item-id :item/stock]))))))))
+          (is (= -150 (get-in db [:snapshot :balances user-id])))
+          (is (= 9 (get-in db [:snapshot :items item-id :item/stock]))))))))

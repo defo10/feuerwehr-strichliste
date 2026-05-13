@@ -22,7 +22,7 @@
 
 (def User
   [:map
-   [:user/id       pos-int?]
+   [:user/id       string?]
    [:user/name     [:string {:gen/gen (gen/elements german-names)}]]
    [:user/role     [:enum :member :kitchen :admin]]
    [:user/pin-hash [:string {:gen/gen (gen/return "$2b$10$fSviXQEHvZ/dHtwvKUREbOFZcc9Recla6YM4vFMmgbLb9hyNLpij.")}]]
@@ -31,26 +31,26 @@
 (defn generate-users [n]
   (into {}
         (map-indexed
-         (fn [i user]
-           (let [id (inc i)]
+         (fn [_ user]
+           (let [id (str (random-uuid))]
              [id (assoc user :user/id id :user/role :admin)]))
          (mg/sample User {:size n}))))
 
 (def Item
   [:map
-   [:item/id        nat-int?]
+   [:item/id        string?]
    [:item/type      [:enum :drink :food]]
    [:item/name      string?]
    [:item/price     pos-int?]
    [:item/stock     nat-int?]
    [:item/status    [:enum :active :inactive]]
-   [:item/image-key {:optional true} nat-int?]])
+   [:item/image-key {:optional true} string?]])
 
 (def UserCreatedEvent
   [:map
-   [:event/id        nat-int?]
+   [:event/id        string?]
    [:event/timestamp string?]
-   [:event/actor     nat-int?]
+   [:event/actor     string?]
    [:event/type      [:= :user/created]]
    [:user/name       string?]
    [:user/role       [:enum :member :kitchen :admin]]
@@ -58,71 +58,71 @@
 
 (def ItemCreatedEvent
   [:map
-   [:event/id        nat-int?]
+   [:event/id        string?]
    [:event/timestamp string?]
-   [:event/actor     nat-int?]
+   [:event/actor     string?]
    [:event/type      [:= :item/created]]
    [:item/type       [:enum :drink :food]]
    [:item/name       string?]
    [:item/price      pos-int?]
    [:item/stock      nat-int?]
-   [:item/image-key  {:optional true} nat-int?]])
+   [:item/image-key  {:optional true} string?]])
 
 (def AuthSignInAttemptedEvent
   [:map
-   [:event/id        nat-int?]
+   [:event/id        string?]
    [:event/timestamp string?]
-   [:event/actor     nat-int?]
+   [:event/actor     string?]
    [:event/type      [:= :auth/sign-in-attempted]]
    [:auth/success    boolean?]])
 
 (def AuthSignedOutEvent
   [:map
-   [:event/id        nat-int?]
+   [:event/id        string?]
    [:event/timestamp string?]
-   [:event/actor     nat-int?]
+   [:event/actor     string?]
    [:event/type      [:= :auth/signed-out]]])
 
 (def CartCheckedOutEvent
   [:map
-   [:event/id         nat-int?]
+   [:event/id         string?]
    [:event/timestamp  string?]
-   [:event/actor      nat-int?]
+   [:event/actor      string?]
    [:event/type       [:= :cart/checked-out]]
    [:checkout/entries [:sequential
                        [:map
-                        [:item-id    nat-int?]
+                        [:item-id    string?]
                         [:quantity   pos-int?]
                         [:unit-price pos-int?]]]]])
 
 (def ItemEditedEvent
   [:map
-   [:event/id        nat-int?]
+   [:event/id        string?]
    [:event/timestamp string?]
-   [:event/actor     nat-int?]
+   [:event/actor     string?]
    [:event/type      [:= :item/edited]]
-   [:item/id         nat-int?]
+   [:item/id         string?]
    [:item/type       [:enum :drink :food]]
    [:item/name       string?]
    [:item/price      pos-int?]
-   [:item/image-key  {:optional true} nat-int?]])
+   [:item/image-key  {:optional true} string?]])
 
 (def ItemRestockedEvent
   [:map
-   [:event/id        nat-int?]
+   [:event/id        string?]
    [:event/timestamp string?]
-   [:event/actor     nat-int?]
+   [:event/actor     string?]
    [:event/type      [:= :item/restocked]]
-   [:item/id         nat-int?]
+   [:item/id         string?]
    [:item/stock      nat-int?]])
 
 (def UserUpdatedEvent
   [:map
-   [:event/id        nat-int?]
+   [:event/id        string?]
    [:event/timestamp string?]
-   [:event/actor     nat-int?]
+   [:event/actor     string?]
    [:event/type      [:= :user/updated]]
-   [:user/id         nat-int?]
+   [:user/id         string?]
    [:user/name       string?]
    [:user/role       [:enum :member :kitchen :admin]]
    [:user/status     [:enum :active :inactive :suspended]]
@@ -130,43 +130,43 @@
 
 (def TopUpRequestedEvent
   [:map
-   [:event/id        nat-int?]
+   [:event/id        string?]
    [:event/timestamp string?]
-   [:event/actor     nat-int?]
+   [:event/actor     string?]
    [:event/type      [:= :balance/top-up-requested]]
-   [:top-up/user-id  nat-int?]
+   [:top-up/user-id  string?]
    [:top-up/amount   pos-int?]])
 
 (def TopUpConfirmedEvent
   [:map
-   [:event/id           nat-int?]
+   [:event/id           string?]
    [:event/timestamp    string?]
-   [:event/actor        nat-int?]
+   [:event/actor        string?]
    [:event/type         [:= :balance/top-up-confirmed]]
-   [:top-up/request-id  nat-int?]])
+   [:top-up/request-id  string?]])
 
 (def TopUpCancelledEvent
   [:map
-   [:event/id           nat-int?]
+   [:event/id           string?]
    [:event/timestamp    string?]
-   [:event/actor        nat-int?]
+   [:event/actor        string?]
    [:event/type         [:= :balance/top-up-cancelled]]
-   [:top-up/request-id  nat-int?]
-   [:top-up/user-id     nat-int?]
+   [:top-up/request-id  string?]
+   [:top-up/user-id     string?]
    [:top-up/amount      pos-int?]])
 
 (def TopUp
   [:map
-   [:top-up/id           nat-int?]
-   [:top-up/user-id      nat-int?]
+   [:top-up/id           string?]
+   [:top-up/user-id      string?]
    [:top-up/amount       pos-int?]
    [:top-up/requested-at string?]
-   [:top-up/requested-by nat-int?]
+   [:top-up/requested-by string?]
    [:top-up/status       [:enum :pending :confirmed :cancelled]]
    [:top-up/confirmed-at {:optional true} string?]
-   [:top-up/confirmed-by {:optional true} nat-int?]
+   [:top-up/confirmed-by {:optional true} string?]
    [:top-up/cancelled-at {:optional true} string?]
-   [:top-up/cancelled-by {:optional true} nat-int?]])
+   [:top-up/cancelled-by {:optional true} string?]])
 
 (def DomainEvent
   [:multi {:dispatch :event/type}
@@ -184,10 +184,9 @@
 
 (def Snapshot
   [:map
-   [:users          [:map-of nat-int? User]]
-   [:balances       [:map-of nat-int? number?]]
-   [:items          [:map-of nat-int? Item]]
-   [:next-event-id  nat-int?]])
+   [:users    [:map-of string? User]]
+   [:balances [:map-of string? number?]]
+   [:items    [:map-of string? Item]]])
 
 (comment
   (generate-users 1))

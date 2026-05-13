@@ -17,10 +17,10 @@
              (re-frame/dispatch-sync [::events/initialize-empty-db]))})
 
 (defn- bootstrap-user! [role]
-  (swap! rf-db/app-db assoc-in [:ui :current-user-id] 0)
+  (swap! rf-db/app-db assoc-in [:ui :current-user-id] "system")
   (re-frame/dispatch-sync [:command/create-user {:name "Test" :role role :pin-hash pin-hash}])
   (swap! rf-db/app-db assoc-in [:ui :current-user-id] nil)
-  (get-in @rf-db/app-db [:domain :users 0]))
+  (-> @rf-db/app-db (get-in [:snapshot :users]) vals first))
 
 (defn- enter-pin! [user]
   (re-frame/dispatch-sync [::auth-events/open-pin-modal user])
@@ -35,7 +35,7 @@
 
       (re-frame/dispatch-sync [::item-events/item-create
                                {:item/type :drink :item/name "Cola" :item/price 150 :item/stock 10}])
-      (is (some #(= "Cola" (:item/name %)) (vals (get-in @rf-db/app-db [:domain :items]))))
+      (is (some #(= "Cola" (:item/name %)) (vals (get-in @rf-db/app-db [:snapshot :items]))))
 
       (re-frame/dispatch-sync [::auth-events/sign-out])
       (is (nil? (get-in @rf-db/app-db [:ui :current-user-id]))))))
