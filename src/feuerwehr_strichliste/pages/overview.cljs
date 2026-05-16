@@ -9,8 +9,10 @@
    [feuerwehr-strichliste.item.events :as item-events]
    [feuerwehr-strichliste.user.subs :as user-subs]
    [feuerwehr-strichliste.user.events :as user-events]
+   [feuerwehr-strichliste.top-up.subs :as top-up-subs]
+   [feuerwehr-strichliste.top-up.events :as top-up-events]
    [feuerwehr-strichliste.components.drawer :refer [drawer]]
-   [feuerwehr-strichliste.item.views :refer [new-item-form edit-item-form item-card receipt-overlay format-price]]
+   [feuerwehr-strichliste.item.views :refer [new-item-form edit-item-form item-card format-price]]
    [feuerwehr-strichliste.user.views :refer [edit-user-form]]
    [feuerwehr-strichliste.top-up.views :refer [top-up-form]]))
 
@@ -22,30 +24,78 @@
 (defn- balance-class [cents]
   (cond (pos? cents) "positive" (neg? cents) "negative" :else "zero"))
 
-(defn overview-page []
-  (let [current-user  (re-frame/subscribe [::app-subs/current-user])
-        balance       (re-frame/subscribe [::app-subs/current-user-balance])
-        active-tab    (re-frame/subscribe [::item-subs/active-tab])
-        items-by-type (re-frame/subscribe [::item-subs/items-by-type])
-        has-items?    (re-frame/subscribe [::item-subs/cart-has-items?])
-        cart-total    (re-frame/subscribe [::item-subs/cart-total])
-        receipt       (re-frame/subscribe [::item-subs/receipt])
-        editing-item  (re-frame/subscribe [::item-subs/editing-item])
-        can-manage?   (re-frame/subscribe [::item-subs/can-manage-items?])
-        profile-open? (re-frame/subscribe [::user-subs/profile-open?])
-        all-users     (re-frame/subscribe [::user-subs/all-users])
-        drawer-open?  (r/atom false)
-        top-up-open?  (r/atom false)]
-    (fn []
-      (let [user      @current-user
-            bal       @balance
-            cart      @cart-total
-            has-cart? @has-items?
-            projected (- bal cart)
-            tab       @active-tab
-            admin?    (= :admin (:user/role user))]
+(defn- session-pane [balance cart-entries pending-top-up top-up-editing? user all-users]
+  (let [cart-sum (reduce (fn [s {:keys [item quantity]}] (+ s (* quantity (:item/price item)))) 0 cart-entries)
+        tu-sum   (or (:amount pending-top-up) 0)
+        projected (- (+ balance tu-sum) cart-sum)]
+    [:div.session-pane
+     [:div.session-pane-balance
+      [:div.session-pane-balance-label "Guthaben"]
+      [:span.session-pane-balance-amount {:class (balance-class projected)}
+       (format-balance projected)]]
+     [:div.session-pane-entries
+      (if (and (empty? cart-entries) (nil? pending-top-up))
+        [:div.session-pane-empty "Noch nichts ausgewählt"]
         [:<>
-         [:div
+         (for [{:keys [item quantity]} cart-entries]
+           ^{:key (:item/id item)}
+           [:div.session-entry
+            [:span.session-entry-name (:item/name item)]
+            [:span.session-entry-qty (str "× " quantity)]
+            [:span.session-entry-price (format-price (* quantity (:item/price item)))]
+            [:button.session-entry-action
+             {:on-click #(re-frame/dispatch [::item-events/decrement (:item/id item)])}
+             [:span.icon.is-small [:i.fas.fa-minus]]]])
+         (when pending-top-up
+           [:div.session-entry
+            [:span.session-entry-name "Einzahlung"]
+            [:span.session-entry-qty ""]
+            [:span.session-entry-price {:style {:color "green"}}
+             (str "+ " (format-price (:amount pending-top-up)))]
+            [:button.session-entry-action
+             {:on-click #(re-frame/dispatch [::top-up-events/open-top-up-form])}
+             [:span.icon.is-small [:i.fas.fa-pen]]]
+            [:button.session-entry-action
+             {:on-click #(re-frame/dispatch [::top-up-events/clear-staged-top-up])}
+             [:span.icon.is-small [:i.fas.fa-times]]]])])]
+     (if top-up-editing?
+       [:div.session-pane-footer
+        [top-up-form {:current-user   user
+                      :all-users      all-users
+                      :initial-amount (:amount pending-top-up)
+                      :on-close       #(re-frame/dispatch [::top-up-events/close-top-up-form])}]]
+       [:div.session-pane-footer
+        [:button.button.is-light.is-fullwidth
+         {:on-click #(re-frame/dispatch [::top-up-events/open-top-up-form])}
+         [:span.icon.is-small [:i.fas.fa-coins]]
+         [:span "Einzahlen"]]
+        [:button.button.is-primary.is-fullwidth
+         {:on-click #(do (re-frame/dispatch [::item-events/confirm-checkout])
+                         (re-frame/dispatch [::auth-events/sign-out]))}
+         "Fertig"]])]))
+
+(defn overview-page []
+  (let [current-user    (re-frame/subscribe [::app-subs/current-user])
+        balance         (re-frame/subscribe [::app-subs/current-user-balance])
+        active-tab      (re-frame/subscribe [::item-subs/active-tab])
+        items-by-type   (re-frame/subscribe [::item-subs/items-by-type])
+        cart-entries    (re-frame/subscribe [::item-subs/cart-entries])
+        editing-item    (re-frame/subscribe [::item-subs/editing-item])
+        can-manage?     (re-frame/subscribe [::item-subs/can-manage-items?])
+        profile-open?   (re-frame/subscribe [::user-subs/profile-open?])
+        all-users       (re-frame/subscribe [::user-subs/all-users])
+        pending-top-up  (re-frame/subscribe [::top-up-subs/pending-top-up])
+        top-up-editing? (re-frame/subscribe [::top-up-subs/top-up-editing?])
+        pane-open?      (r/atom true)
+        drawer-open?    (r/atom false)]
+    (fn []
+      (let [user  @current-user
+            bal   @balance
+            tab   @active-tab
+            admin? (= :admin (:user/role user))
+            pane? @pane-open?]
+        [:div.overview-layout
+         [:div.main-content
           [:nav.top-nav
            [:div.top-nav-left
             [:div.top-nav-identity
@@ -64,22 +114,13 @@
                 [:span.icon.is-small [:i.fas.fa-coins]]
                 [:span "Einzahlungen"]]])]
            [:div.top-nav-right
-            [:div.top-nav-balance-area
-             [:span.top-nav-balance {:class (balance-class (if has-cart? projected bal))}
-              (format-balance (if has-cart? projected bal))
-              (when has-cart?
-                [:span.top-nav-balance-delta (str " (-" (format-price cart) ")")])]
-             [:button.button.is-light.is-small
-              {:on-click #(reset! top-up-open? true)}
-              [:span.icon.is-small [:i.fas.fa-coins]]
-              [:span "Einzahlen"]]]
-            [:button.button.is-primary
-             {:on-click #(if has-cart?
-                           (re-frame/dispatch [::item-events/show-receipt])
-                           (re-frame/dispatch [::auth-events/sign-out]))}
-             (if has-cart?
-               [:<> [:span.icon.is-small [:i.fas.fa-receipt]] [:span "Fertig"]]
-               "Fertig")]]]
+            (when-not pane?
+              [:div.top-nav-balance-area
+               [:span.top-nav-balance {:class (balance-class bal)}
+                (format-balance bal)]])
+            [:button.button.is-light.is-small
+             {:on-click #(swap! pane-open? not)}
+             [:span.icon.is-small [:i.fas.fa-columns]]]]]
           [:div.tab-bar
            [:button.tab
             {:class    (when (= tab :drink) "tab--active")
@@ -105,8 +146,8 @@
                 [:span {:style {:font-size "0.9rem" :font-weight 600}} "Neu"]]])
             (for [item (get @items-by-type tab [])]
               ^{:key (:item/id item)} [item-card item]))]]
-         (when @receipt
-           [receipt-overlay @receipt])
+         (when pane?
+           [session-pane bal @cart-entries @pending-top-up @top-up-editing? user @all-users])
          [drawer {:open?    @drawer-open?
                   :on-close #(reset! drawer-open? false)
                   :title    "Neues Essen/Trinken"}
@@ -122,11 +163,4 @@
                   :title    "Mein Profil"}
           (when @profile-open?
             [edit-user-form user :self
-             #(re-frame/dispatch [::user-events/close-profile])])]
-         [drawer {:open?    @top-up-open?
-                  :on-close #(reset! top-up-open? false)
-                  :title    "Einzahlung melden"}
-          (when @top-up-open?
-            [top-up-form {:current-user user
-                          :all-users    @all-users
-                          :on-close     #(reset! top-up-open? false)}])]]))))
+             #(re-frame/dispatch [::user-events/close-profile])])]]))))

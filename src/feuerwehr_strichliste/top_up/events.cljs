@@ -20,22 +20,25 @@
        :top-up/requested-by (:event/actor request)
        :top-up/status       (if resolved? :resolved :pending)})))
 
-(re-frame/reg-event-fx
- ::request-top-up
- (fn-traced [{:keys [db]} [_ {:keys [user-id amount]}]]
-   (let [actor-id (get-in db [:ui :current-user-id])
-         {:keys [snapshot event]}
-         (reducer/apply-event
-          (:snapshot db)
-          (fn [id]
-            {:event/type       :balance/top-up-requested
-             :event/id         id
-             :event/timestamp  (.toISOString (js/Date.))
-             :event/actor      actor-id
-             :top-up/user-id   user-id
-             :top-up/amount    amount}))]
-     {:db       (assoc db :snapshot snapshot :event-log (conj (:event-log db) event))
-      :persist! {:events [event] :snapshot snapshot}})))
+(re-frame/reg-event-db
+ ::stage-top-up
+ (fn-traced [db [_ {:keys [user-id amount]}]]
+   (assoc-in db [:ui :pending-top-up] {:user-id user-id :amount amount})))
+
+(re-frame/reg-event-db
+ ::clear-staged-top-up
+ (fn-traced [db _]
+   (assoc-in db [:ui :pending-top-up] nil)))
+
+(re-frame/reg-event-db
+ ::open-top-up-form
+ (fn-traced [db _]
+   (assoc-in db [:ui :top-up-editing?] true)))
+
+(re-frame/reg-event-db
+ ::close-top-up-form
+ (fn-traced [db _]
+   (assoc-in db [:ui :top-up-editing?] false)))
 
 (re-frame/reg-event-fx
  ::confirm-top-up

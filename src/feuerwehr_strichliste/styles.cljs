@@ -235,7 +235,10 @@
      :width                "100%"}]
 
    [:.form-actions
-    {:padding-top (rem 0.5)}]
+    {:padding-top (rem 0.5)
+     :display     "flex"
+     :flex-direction "column"
+     :gap         (rem 0.5)}]
 
    [:.top-nav
     {:position        "sticky"
@@ -472,109 +475,6 @@
      :text-align            "center"
      :font-variant-numeric  "tabular-nums"}]
 
-   [:.receipt-overlay
-    {:position        "fixed"
-     :inset           0
-     :background      "rgba(0,0,0,0.55)"
-     :backdrop-filter "blur(4px)"
-     :display         "flex"
-     :align-items     "center"
-     :justify-content "center"
-     :z-index         50}]
-
-   [:.receipt
-    {:background     "var(--color-surface)"
-     :border-radius  "var(--radius)"
-     :width          (px 480)
-     :max-width      "90vw"
-     :max-height     "85vh"
-     :overflow-y     "auto"
-     :box-shadow     "var(--shadow-hover)"
-     :display        "flex"
-     :flex-direction "column"
-     :gap            (rem 1)
-     :padding        "2rem"}]
-
-   [:.receipt-title
-    {:font-size   (rem 1.5)
-     :font-weight 700
-     :text-align  "center"}]
-
-   [:.receipt-entries
-    {:display        "flex"
-     :flex-direction "column"
-     :gap            "0.625rem"}]
-
-   [:.receipt-entry
-    {:display     "flex"
-     :align-items "baseline"
-     :gap         (rem 0.75)}]
-
-   [:.receipt-entry-name
-    {:font-size   (rem 1.1)
-     :font-weight 600
-     :flex        1}]
-
-   [:.receipt-entry-qty
-    {:font-size  (rem 1.1)
-     :color      "var(--color-on-surface-muted)"
-     :min-width  (px 36)
-     :text-align "center"}]
-
-   [:.receipt-entry-price
-    {:font-size             (rem 1.1)
-     :font-weight           600
-     :font-variant-numeric  "tabular-nums"
-     :text-align            "right"
-     :min-width             (px 72)}]
-
-   [:.receipt-divider
-    {:height     (px 1)
-     :background "var(--color-outline)"
-     :margin     "0.25rem 0"}]
-
-   [:.receipt-total
-    {:display         "flex"
-     :justify-content "space-between"
-     :align-items     "baseline"}
-    [:span {:font-size (rem 1.1) :font-weight 600}]]
-
-   [:.receipt-total-amount
-    {:font-size             (rem 1.5)
-     :font-weight           700
-     :font-variant-numeric  "tabular-nums"
-     :color                 "var(--color-primary)"}]
-
-   [:.receipt-actions
-    {:display    "flex"
-     :gap        "0.75rem"
-     :margin-top "0.5rem"}]
-
-   [:.receipt-confirm
-    {:flex          1
-     :padding       "0.875rem"
-     :background    "var(--color-primary)"
-     :color         "var(--color-on-primary)"
-     :border        "none"
-     :border-radius "var(--radius)"
-     :font-size     (rem 1.1)
-     :font-weight   600
-     :cursor        "pointer"
-     :transition    "opacity 0.1s"}
-    [:&:hover {:opacity 0.9}]]
-
-   [:.receipt-edit
-    {:padding       "0.875rem 1.25rem"
-     :background    "transparent"
-     :color         "var(--color-on-surface)"
-     :border        "1px solid var(--color-outline)"
-     :border-radius "var(--radius)"
-     :font-size     (rem 1.1)
-     :font-weight   600
-     :cursor        "pointer"
-     :transition    "background 0.1s"}
-    [:&:hover {:background "var(--color-surface-hover)"}]]
-
    [:.col-header
     {:background  "none"
      :border      "none"
@@ -586,6 +486,102 @@
      :text-align  "left"
      :white-space "nowrap"}
     [:&:hover {:color "var(--color-on-surface)"}]]
+
+   [:.overview-layout
+    {:display  "flex"
+     :height   "100vh"
+     :overflow "hidden"}]
+
+   [:.main-content
+    {:flex       1
+     :overflow-y "auto"
+     :min-width  0}]
+
+   [:.session-pane
+    {:width          (px 300)
+     :flex-shrink    0
+     :display        "flex"
+     :flex-direction "column"
+     :background     "var(--color-surface)"
+     :border-left    "1px solid var(--color-outline)"
+     :height         "100vh"
+     :overflow       "hidden"}]
+
+   [:.session-pane-balance
+    {:padding       "1.5rem"
+     :border-bottom "1px solid var(--color-outline)"}]
+
+   [:.session-pane-balance-label
+    {:font-size      (rem 0.75)
+     :font-weight    600
+     :color          "var(--color-on-surface-muted)"
+     :text-transform "uppercase"
+     :letter-spacing "0.05em"
+     :margin-bottom  "0.375rem"}]
+
+   [:.session-pane-balance-amount
+    {:font-size             (rem 2)
+     :font-weight           800
+     :font-variant-numeric  "tabular-nums"
+     :display               "block"}
+    ["&.positive" {:color "green"}]
+    ["&.negative" {:color "var(--color-primary)"}]
+    ["&.zero"     {:color "var(--color-on-surface-muted)"}]]
+
+   [:.session-pane-entries
+    {:flex       1
+     :overflow-y "auto"
+     :padding    "0.75rem 1rem"}]
+
+   [:.session-entry
+    {:display       "flex"
+     :align-items   "center"
+     :gap           "0.5rem"
+     :padding       "0.5rem 0"
+     :border-bottom "1px solid var(--color-outline)"}
+    ["&:last-child" {:border-bottom "none"}]]
+
+   [:.session-entry-name
+    {:flex        1
+     :font-size   (rem 0.95)
+     :font-weight 500}]
+
+   [:.session-entry-qty
+    {:font-size             (rem 0.875)
+     :color                 "var(--color-on-surface-muted)"
+     :font-variant-numeric  "tabular-nums"
+     :min-width             (px 24)
+     :text-align            "center"}]
+
+   [:.session-entry-price
+    {:font-size             (rem 0.95)
+     :font-weight           600
+     :font-variant-numeric  "tabular-nums"
+     :color                 "var(--color-primary)"}]
+
+   [:.session-entry-action
+    {:background  "none"
+     :border      "none"
+     :cursor      "pointer"
+     :padding     "0.25rem"
+     :font-size   (rem 0.875)
+     :color       "var(--color-on-surface-muted)"
+     :line-height 1
+     :transition  "color 0.1s"}
+    [:&:hover {:color "var(--color-on-surface)"}]]
+
+   [:.session-pane-empty
+    {:padding    "1.5rem 1rem"
+     :text-align "center"
+     :color      "var(--color-on-surface-muted)"
+     :font-size  (rem 0.9)}]
+
+   [:.session-pane-footer
+    {:padding        "1rem"
+     :border-top     "1px solid var(--color-outline)"
+     :display        "flex"
+     :flex-direction "column"
+     :gap            "0.5rem"}]
 
    [:.top-nav-balance-area
     {:display     "flex"

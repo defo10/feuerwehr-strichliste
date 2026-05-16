@@ -46,3 +46,11 @@
  :<- [::app-subs/current-user]
  (fn [user _]
    (permissions/can? (:user/role user) :confirm-top-ups)))
+
+(re-frame/reg-sub
+ ::pending-top-up
+ (fn [db _] (get-in db [:ui :pending-top-up])))
+
+(re-frame/reg-sub
+ ::top-up-editing?
+ (fn [db _] (get-in db [:ui :top-up-editing?])))

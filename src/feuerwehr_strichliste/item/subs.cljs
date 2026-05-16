@@ -14,17 +14,6 @@
    (get-in db [:ui :active-tab])))
 
 (re-frame/reg-sub
- ::receipt
- (fn [db _]
-   (get-in db [:ui :receipt])))
-
-(re-frame/reg-sub
- ::cart-has-items?
- :<- [::cart]
- (fn [cart _]
-   (some pos? (vals cart))))
-
-(re-frame/reg-sub
  ::cart-qty
  (fn [_ _] (re-frame/subscribe [::cart]))
  (fn [cart [_ item-id]]
@@ -73,11 +62,13 @@
    (group-by :item/type items)))
 
 (re-frame/reg-sub
- ::cart-total
+ ::cart-entries
  :<- [::cart]
  :<- [::items-map]
  (fn [[cart items-map] _]
-   (reduce (fn [sum [item-id qty]]
-             (+ sum (* qty (get-in items-map [item-id :item/price] 0))))
-           0
-           cart)))
+   (->> cart
+        (keep (fn [[item-id qty]]
+                (when (pos? qty)
+                  (when-let [item (get items-map item-id)]
+                    {:item item :quantity qty}))))
+        (sort-by #(get-in % [:item :item/name])))))

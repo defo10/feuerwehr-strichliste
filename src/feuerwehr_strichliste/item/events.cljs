@@ -133,65 +133,60 @@
                 (= 1 qty)   (update-in db [:ui :cart] dissoc item-id)
                 :else        (update-in db [:ui :cart item-id] dec)))))
 
-(re-frame/reg-event-db
- ::show-receipt
- (fn-traced [db _]
-            (let [cart    (get-in db [:ui :cart])
-                  items   (get-in db [:snapshot :items])
-                  user-id (get-in db [:ui :current-user-id])
-                  pairs   (->> cart
-                               (keep (fn [[item-id qty]]
-                                       (when (pos? qty)
-                                         (when-let [item (get items item-id)]
-                                           {:item item :quantity qty}))))
-                               (sort-by #(get-in % [:item :item/name])))
-                  total   (reduce (fn [sum {:keys [item quantity]}]
-                                    (+ sum (* quantity (:item/price item))))
-                                  0 pairs)
-                  top-ups (let [event-log (:event-log db)
-                               requests  (into {} (keep (fn [event]
-                                                          (when (and (= :balance/top-up-requested (:event/type event))
-                                                                     (= user-id (:top-up/user-id event)))
-                                                            [(:event/id event) event]))
-                                                        event-log))
-                               resolved  (into #{} (keep (fn [event]
-                                                           (when (#{:balance/top-up-confirmed :balance/top-up-cancelled}
-                                                                  (:event/type event))
-                                                             (:top-up/request-id event)))
-                                                         event-log))]
-                           (->> requests
-                                (keep (fn [[id event]]
-                                        (when-not (resolved id)
-                                          {:top-up/id           id
-                                           :top-up/amount       (:top-up/amount event)
-                                           :top-up/requested-at (:event/timestamp event)})))
-                                (sort-by :top-up/requested-at)))]
-              (assoc-in db [:ui :receipt] {:entries pairs :total total :top-ups top-ups}))))
-
-(re-frame/reg-event-db
- ::dismiss-receipt
- (fn-traced [db _]
-            (assoc-in db [:ui :receipt] nil)))
-
 (re-frame/reg-event-fx
  ::confirm-checkout
  (fn-traced [{:keys [db]} _]
-            (let [entries  (get-in db [:ui :receipt :entries])
-                  user-id  (get-in db [:ui :current-user-id])
-                  {:keys [snapshot event]} (reducer/apply-event
-                                            (:snapshot db)
-                                            (fn [id]
-                                              {:event/type       :cart/checked-out
-                                               :event/id         id
-                                               :event/timestamp  (.toISOString (js/Date.))
-                                               :event/actor      user-id
-                                               :checkout/entries (vec (map (fn [{:keys [item quantity]}]
-                                                                             {:item-id    (:item/id item)
-                                                                              :quantity   quantity
-                                                                              :unit-price (:item/price item)})
-                                                                           entries))}))]
-              {:db       (assoc db :snapshot snapshot :event-log (conj (:event-log db) event))
-               :persist! {:events [event] :snapshot snapshot}})))
+            (let [cart       (get-in db [:ui :cart])
+                  items      (get-in db [:snapshot :items])
+                  user-id    (get-in db [:ui :current-user-id])
+                  pending-tu (get-in db [:ui :pending-top-up])
+                  ts         (.toISOString (js/Date.))
+                  entries    (->> cart
+                                  (keep (fn [[item-id qty]]
+                                          (when (pos? qty)
+                                            (when-let [item (get items item-id)]
+                                              {:item-id    item-id
+                                               :quantity   qty
+                                               :unit-price (:item/price item)}))))
+                                  vec)
+                  [snap1 cart-event]
+                  (if (seq entries)
+                    (let [{:keys [snapshot event]}
+                          (reducer/apply-event
+                           (:snapshot db)
+                           (fn [id]
+                             {:event/type       :cart/checked-out
+                              :event/id         id
+                              :event/timestamp  ts
+                              :event/actor      user-id
+                              :checkout/entries entries}))]
+                      [snapshot event])
+                    [(:snapshot db) nil])
+                  [snap2 tu-event]
+                  (if pending-tu
+                    (let [{:keys [snapshot event]}
+                          (reducer/apply-event
+                           snap1
+                           (fn [id]
+                             {:event/type      :balance/top-up-requested
+                              :event/id        id
+                              :event/timestamp ts
+                              :event/actor     user-id
+                              :top-up/user-id  (:user-id pending-tu)
+                              :top-up/amount   (:amount pending-tu)}))]
+                      [snapshot event])
+                    [snap1 nil])
+                  events (filterv some? [cart-event tu-event])]
+              (if (seq events)
+                {:db       (-> db
+                               (assoc :snapshot snap2)
+                               (update :event-log into events)
+                               (assoc-in [:ui :cart] {})
+                               (assoc-in [:ui :pending-top-up] nil))
+                 :persist! {:events events :snapshot snap2}}
+                {:db (-> db
+                         (assoc-in [:ui :cart] {})
+                         (assoc-in [:ui :pending-top-up] nil))}))))
 
 (re-frame/reg-event-fx
  ::item-create

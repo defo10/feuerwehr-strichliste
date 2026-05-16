@@ -6,8 +6,8 @@
 (defn- format-cents [cents]
   (str (quot cents 100) "," (let [r (mod cents 100)] (if (< r 10) (str "0" r) r))))
 
-(defn top-up-form [{:keys [current-user all-users on-close]}]
-  (let [form (r/atom {:user-id (:user/id current-user) :amount 0})]
+(defn top-up-form [{:keys [current-user all-users on-close initial-amount]}]
+  (let [form (r/atom {:user-id (:user/id current-user) :amount (or initial-amount 0)})]
     (fn [{:keys [current-user all-users on-close]}]
       (let [f      @form
             admin? (= :admin (:user/role current-user))]
@@ -18,7 +18,7 @@
             [:label "Nutzer"]
             [:div.select.is-fullwidth
              [:select {:value     (:user-id f)
-                       :on-change #(swap! form assoc :user-id (js/parseInt (.. % -target -value)))}
+                       :on-change #(swap! form assoc :user-id (.. % -target -value))}
               (for [user all-users]
                 ^{:key (:user/id user)} [:option {:value (:user/id user)} (:user/name user)])]]])
 
@@ -50,8 +50,12 @@
             :disabled (zero? (:amount f))
             :on-click (fn [e]
                         (.preventDefault e)
-                        (re-frame/dispatch [::events/request-top-up
+                        (re-frame/dispatch [::events/stage-top-up
                                             {:user-id (:user-id f)
                                              :amount  (:amount f)}])
                         (on-close))}
-           "Einzahlung melden"]]]))))
+           "Einzahlung vormerken"]
+          [:button.button.is-light.is-fullwidth
+           {:type     "button"
+            :on-click on-close}
+           "Abbrechen"]]]))))

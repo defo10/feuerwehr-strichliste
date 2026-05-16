@@ -3,7 +3,6 @@
             [re-frame.core :as re-frame]
             [feuerwehr-strichliste.item.events :as events]
             [feuerwehr-strichliste.item.subs :as subs]
-            [feuerwehr-strichliste.auth.events :as auth-events]
             [clojure.string :as str]))
 
 (defn format-price [cents]
@@ -47,53 +46,6 @@
            {:disabled (or (not available?) at-max?)
             :on-click #(re-frame/dispatch [::events/increment id])}
            "+"]]]))))
-
-;;
-;; Receipt
-;;
-
-(defn receipt-overlay [{:keys [entries total top-ups]}]
-  (let [top-ups-total (reduce #(+ %1 (:top-up/amount %2)) 0 top-ups)
-        net           (- total top-ups-total)]
-    [:div.receipt-overlay
-     [:div.receipt
-      [:h2.receipt-title "Bestellung"]
-      [:div.receipt-entries
-       (for [{:keys [item quantity]} entries]
-         ^{:key (:item/id item)}
-         [:div.receipt-entry
-          [:span.receipt-entry-name (:item/name item)]
-          [:span.receipt-entry-qty (str "× " quantity)]
-          [:span.receipt-entry-price (format-price (* quantity (:item/price item)))]])]
-      (when (seq top-ups)
-        [:<>
-         [:div.receipt-divider]
-         [:div {:style {:font-size "0.875rem" :font-weight 600 :color "var(--color-on-surface-muted)" :text-transform "uppercase" :letter-spacing "0.05em"}}
-          "Einzahlungen"]
-         [:div.receipt-entries
-          (for [top-up top-ups]
-            ^{:key (:top-up/id top-up)}
-            [:div.receipt-entry
-             [:span.receipt-entry-name "Einzahlung (vorgemerkt)"]
-             [:span.receipt-entry-qty ""]
-             [:span.receipt-entry-price {:style {:color "green"}}
-              (str "+ " (format-price (:top-up/amount top-up)))]])]])
-      [:div.receipt-divider]
-      [:div.receipt-total
-       [:span "Gesamt"]
-       [:span.receipt-total-amount (if (neg? net)
-                                     (str "-" (format-price (- net)))
-                                     (format-price net))]]
-      [:div.receipt-actions
-       [:button.receipt-edit
-        {:on-click #(re-frame/dispatch [::events/dismiss-receipt])}
-        "Bearbeiten"]
-       [:button.receipt-confirm
-        {:on-click (fn []
-                     (re-frame/dispatch [::events/confirm-checkout])
-                     (re-frame/dispatch [::auth-events/sign-out]))}
-        "Okay"]]]]))
-
 
 ;;
 ;; Item form (shared between new and edit)
