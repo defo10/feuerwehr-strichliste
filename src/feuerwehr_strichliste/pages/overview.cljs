@@ -24,15 +24,23 @@
 (defn- balance-class [cents]
   (cond (pos? cents) "positive" (neg? cents) "negative" :else "zero"))
 
-(defn- session-pane [balance cart-entries pending-top-up top-up-editing? user all-users]
-  (let [cart-sum (reduce (fn [s {:keys [item quantity]}] (+ s (* quantity (:item/price item)))) 0 cart-entries)
-        tu-sum   (or (:amount pending-top-up) 0)
+(defn- session-pane [balance cart-entries pending-top-up top-up-editing? user]
+  (let [cart-sum  (reduce (fn [s {:keys [item quantity]}] (+ s (* quantity (:item/price item)))) 0 cart-entries)
+        tu-sum    (or (:amount pending-top-up) 0)
         projected (- (+ balance tu-sum) cart-sum)]
     [:div.session-pane
      [:div.session-pane-balance
       [:div.session-pane-balance-label "Guthaben"]
       [:span.session-pane-balance-amount {:class (balance-class projected)}
-       (format-balance projected)]]
+       (format-balance projected)]
+      (if top-up-editing?
+        [top-up-form {:current-user   user
+                      :initial-amount (:amount pending-top-up)
+                      :on-close       #(re-frame/dispatch [::top-up-events/close-top-up-form])}]
+        [:button.button.is-light.is-fullwidth
+         {:on-click #(re-frame/dispatch [::top-up-events/open-top-up-form])}
+         [:span.icon.is-small [:i.fas.fa-coins]]
+         [:span "Einzahlen"]])]
      [:div.session-pane-entries
       (if (and (empty? cart-entries) (nil? pending-top-up))
         [:div.session-pane-empty "Noch nichts ausgewählt"]
@@ -58,21 +66,11 @@
             [:button.session-entry-action
              {:on-click #(re-frame/dispatch [::top-up-events/clear-staged-top-up])}
              [:span.icon.is-small [:i.fas.fa-times]]]])])]
-     (if top-up-editing?
-       [:div.session-pane-footer
-        [top-up-form {:current-user   user
-                      :all-users      all-users
-                      :initial-amount (:amount pending-top-up)
-                      :on-close       #(re-frame/dispatch [::top-up-events/close-top-up-form])}]]
-       [:div.session-pane-footer
-        [:button.button.is-light.is-fullwidth
-         {:on-click #(re-frame/dispatch [::top-up-events/open-top-up-form])}
-         [:span.icon.is-small [:i.fas.fa-coins]]
-         [:span "Einzahlen"]]
-        [:button.button.is-primary.is-fullwidth
-         {:on-click #(do (re-frame/dispatch [::item-events/confirm-checkout])
-                         (re-frame/dispatch [::auth-events/sign-out]))}
-         "Fertig"]])]))
+     [:div.session-pane-footer
+      [:button.button.is-primary.is-fullwidth
+       {:on-click #(do (re-frame/dispatch [::item-events/confirm-checkout])
+                       (re-frame/dispatch [::auth-events/sign-out]))}
+       "Fertig"]]]))
 
 (defn overview-page []
   (let [current-user    (re-frame/subscribe [::app-subs/current-user])
@@ -83,7 +81,6 @@
         editing-item    (re-frame/subscribe [::item-subs/editing-item])
         can-manage?     (re-frame/subscribe [::item-subs/can-manage-items?])
         profile-open?   (re-frame/subscribe [::user-subs/profile-open?])
-        all-users       (re-frame/subscribe [::user-subs/all-users])
         pending-top-up  (re-frame/subscribe [::top-up-subs/pending-top-up])
         top-up-editing? (re-frame/subscribe [::top-up-subs/top-up-editing?])
         pane-open?      (r/atom true)
@@ -147,7 +144,7 @@
             (for [item (get @items-by-type tab [])]
               ^{:key (:item/id item)} [item-card item]))]]
          (when pane?
-           [session-pane bal @cart-entries @pending-top-up @top-up-editing? user @all-users])
+           [session-pane bal @cart-entries @pending-top-up @top-up-editing? user])
          [drawer {:open?    @drawer-open?
                   :on-close #(reset! drawer-open? false)
                   :title    "Neues Essen/Trinken"}

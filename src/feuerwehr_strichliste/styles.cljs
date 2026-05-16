@@ -508,8 +508,11 @@
      :overflow       "hidden"}]
 
    [:.session-pane-balance
-    {:padding       "1.5rem"
-     :border-bottom "1px solid var(--color-outline)"}]
+    {:padding        "1.5rem"
+     :border-bottom  "1px solid var(--color-outline)"
+     :display        "flex"
+     :flex-direction "column"
+     :gap            "1rem"}]
 
    [:.session-pane-balance-label
     {:font-size      (rem 0.75)
