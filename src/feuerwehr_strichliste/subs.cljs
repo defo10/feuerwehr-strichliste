@@ -31,3 +31,20 @@
  ::event-log
  (fn [db _]
    (get db :event-log)))
+
+(re-frame/reg-sub
+ ::user-history
+ :<- [::event-log]
+ :<- [::current-user]
+ (fn [[event-log user] _]
+   (when user
+     (let [uid (:user/id user)]
+       (->> event-log
+            (filter #(or (and (= :cart/checked-out (:event/type %))
+                              (= uid (:event/actor %)))
+                         (and (= :balance/top-up-requested (:event/type %))
+                              (= uid (:top-up/user-id %)))))
+            (group-by :event/timestamp)
+            (sort-by key)
+            reverse
+            (map val))))))

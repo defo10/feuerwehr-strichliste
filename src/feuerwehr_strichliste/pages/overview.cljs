@@ -100,6 +100,10 @@
              [:button.button.is-ghost.is-small
               {:on-click #(re-frame/dispatch [::user-events/open-profile])}
               [:span.icon.is-small [:i.fas.fa-pen]]]]
+            [:button.button.is-light.is-small
+             {:on-click #(re-frame/dispatch [::events/navigate :history])}
+             [:span.icon.is-small [:i.fas.fa-history]]
+             [:span "Verlauf"]]
             (when admin?
               [:div.top-nav-admin-actions
                [:button.button.is-light.is-small
