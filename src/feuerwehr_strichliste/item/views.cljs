@@ -179,6 +179,55 @@
                                     :image      (:image f)}))}
            submit-label]]]))))
 
+(defn checkout-form [{:keys [user items on-close]}]
+  (let [qtys (r/atom {})]
+    (fn [{:keys [user items on-close]}]
+      (let [qs      @qtys
+            entries (->> items
+                         (keep (fn [{:item/keys [id price]}]
+                                 (when (pos? (get qs id 0))
+                                   {:item-id    id
+                                    :quantity   (get qs id)
+                                    :unit-price price})))
+                         vec)]
+        [:form.drawer-form {:on-submit #(.preventDefault %)}
+         [:p.is-size-7.has-text-grey {:style {:margin-bottom "0.75rem"}}
+          (str "Einkauf für " (:user/name user))]
+         (for [{:item/keys [id name price stock]} items]
+           ^{:key id}
+           [:div.form-field {:style {:display "flex" :align-items "center" :gap "0.5rem"}}
+            [:span {:style {:flex 1}} name]
+            [:span.is-size-7.has-text-grey (format-price price)]
+            [:div.buttons.has-addons {:style {:margin 0}}
+             [:button.button.is-small
+              {:type     "button"
+               :disabled (zero? (get qs id 0))
+               :on-click #(swap! qtys update id (fn [q] (max 0 (dec (or q 0)))))}
+              "−"]
+             [:span.button.is-small.is-static
+              {:style {:min-width "2.5rem" :justify-content "center"}}
+              (str (get qs id 0))]
+             [:button.button.is-small
+              {:type     "button"
+               :disabled (>= (get qs id 0) stock)
+               :on-click #(swap! qtys update id (fn [q] (inc (or q 0))))}
+              "+"]]])
+         [:div.form-actions
+          [:button.button.is-primary.is-fullwidth
+           {:type     "submit"
+            :disabled (empty? entries)
+            :on-click (fn [e]
+                        (.preventDefault e)
+                        (re-frame/dispatch [::events/admin-checkout
+                                            {:user-id (:user/id user)
+                                             :entries entries}])
+                        (on-close))}
+           "Buchen"]
+          [:button.button.is-light.is-fullwidth
+           {:type     "button"
+            :on-click on-close}
+           "Abbrechen"]]]))))
+
 (defn new-item-form [on-close]
   [item-form {:submit-label "Hinzufügen"
               :on-submit    (fn [data]

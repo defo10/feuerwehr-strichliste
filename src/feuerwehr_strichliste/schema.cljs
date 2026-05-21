@@ -169,6 +169,21 @@
    [:top-up/cancelled-at {:optional true} string?]
    [:top-up/cancelled-by {:optional true} string?]])
 
+(def TransactionVoidedEvent
+  [:map
+   [:event/id          string?]
+   [:event/timestamp   string?]
+   [:event/actor       string?]
+   [:event/type        [:= :transaction/voided]]
+   [:event/subject     string?]
+   [:void/original-id  string?]
+   [:void/reason       {:optional true} string?]
+   [:checkout/entries  [:sequential
+                        [:map
+                         [:item-id    string?]
+                         [:quantity   pos-int?]
+                         [:unit-price pos-int?]]]]])
+
 (def DomainEvent
   [:multi {:dispatch :event/type}
    [:user/created              UserCreatedEvent]
@@ -181,7 +196,8 @@
    [:auth/signed-out           AuthSignedOutEvent]
    [:balance/top-up-requested  TopUpRequestedEvent]
    [:balance/top-up-confirmed  TopUpConfirmedEvent]
-   [:balance/top-up-cancelled  TopUpCancelledEvent]])
+   [:balance/top-up-cancelled  TopUpCancelledEvent]
+   [:transaction/voided        TransactionVoidedEvent]])
 
 (def Snapshot
   [:map

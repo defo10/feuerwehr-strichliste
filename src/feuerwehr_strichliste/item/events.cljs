@@ -189,6 +189,52 @@
                          (assoc-in [:ui :pending-top-up] nil))}))))
 
 (re-frame/reg-event-fx
+ ::void-checkout
+ (fn-traced [{:keys [db]} [_ original-event-id]]
+            (let [actor-id (get-in db [:ui :current-user-id])
+                  role     (get-in db [:snapshot :users actor-id :user/role])
+                  original (first (filter #(= original-event-id (:event/id %)) (:event-log db)))]
+              (if-not (permissions/can? role :void-transaction)
+                {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}
+                (if-not original
+                  {:db (assoc-in db [:ui :error] {:type :errors/not-found :message "Event not found"})}
+                  (let [{:keys [snapshot event]}
+                        (reducer/apply-event
+                         (:snapshot db)
+                         (fn [id]
+                           {:event/type       :transaction/voided
+                            :event/id         id
+                            :event/timestamp  (.toISOString (js/Date.))
+                            :event/actor      actor-id
+                            :event/subject    (or (:event/subject original) (:event/actor original))
+                            :void/original-id original-event-id
+                            :checkout/entries (:checkout/entries original)}))]
+                    {:db       (-> db (assoc :snapshot snapshot) (update :event-log conj event))
+                     :persist! {:events [event] :snapshot snapshot}}))))))
+
+(re-frame/reg-event-fx
+ ::admin-checkout
+ (fn-traced [{:keys [db]} [_ {:keys [user-id entries]}]]
+            (let [actor-id (get-in db [:ui :current-user-id])
+                  role     (get-in db [:snapshot :users actor-id :user/role])]
+              (if-not (permissions/can? role :manage-users)
+                {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}
+                (if (empty? entries)
+                  {:db db}
+                  (let [{:keys [snapshot event]}
+                        (reducer/apply-event
+                         (:snapshot db)
+                         (fn [id]
+                           {:event/type       :cart/checked-out
+                            :event/id         id
+                            :event/timestamp  (.toISOString (js/Date.))
+                            :event/actor      actor-id
+                            :event/subject    user-id
+                            :checkout/entries entries}))]
+                    {:db       (-> db (assoc :snapshot snapshot) (update :event-log conj event))
+                     :persist! {:events [event] :snapshot snapshot}}))))))
+
+(re-frame/reg-event-fx
  ::item-create
  (fn-traced [{:keys [db]} [_ {:item/keys [type name price stock] :keys [image]}]]
             (let [user-id (get-in db [:ui :current-user-id])

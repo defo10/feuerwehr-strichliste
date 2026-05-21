@@ -8,6 +8,12 @@
    [feuerwehr-strichliste.user.subs :as user-subs]
    [feuerwehr-strichliste.user.events :as user-events]
    [feuerwehr-strichliste.user.views :refer [new-user-form edit-user-form role-labels status-labels]]
+   [feuerwehr-strichliste.item.subs :as item-subs]
+   [feuerwehr-strichliste.item.events :as item-events]
+   [feuerwehr-strichliste.item.views :refer [checkout-form format-price]]
+   [feuerwehr-strichliste.top-up.events :as top-up-events]
+   [feuerwehr-strichliste.top-up.views :refer [admin-top-up-form]]
+   [feuerwehr-strichliste.domain.permissions :as permissions]
    [feuerwehr-strichliste.components.drawer :refer [drawer]]))
 
 (def ^:private role-order   {:member 0 :kitchen 1 :admin 2})
@@ -35,18 +41,8 @@
     [:button.col-header {:on-click #(toggle-sort sort-state col)}
      label arrow]))
 
-(defn- role-cell [user can-manage?]
-  (if can-manage?
-    [:div.select.is-small
-     [:select {:value     (name (:user/role user))
-               :on-change #(re-frame/dispatch [::user-events/user-update
-                                               {:id     (:user/id user)
-                                                :name   (:user/name user)
-                                                :role   (keyword (.. % -target -value))
-                                                :status (:user/status user)}])}
-      (for [[k label] role-labels]
-        ^{:key k} [:option {:value (name k)} label])]]
-    [:span.tag (role-labels (:user/role user))]))
+(defn- role-cell [user]
+  [:span.tag (role-labels (:user/role user))])
 
 (defn- status-tag [status]
   (let [label (status-labels status)]
@@ -55,40 +51,149 @@
       :inactive  [:span.tag label]
       :suspended [:span.tag.is-danger label])))
 
-(defn- user-row [user all-balances can-manage?]
-  [:tr
-   [:td (:user/name user)]
-   [:td (str (.toFixed (get all-balances (:user/id user) 0) 2) " €")]
-   [:td [role-cell user can-manage?]]
-   [:td [status-tag (:user/status user)]]
-   [:td
-    (when can-manage?
-      [:button.button.is-ghost.is-small
-       {:on-click #(re-frame/dispatch [::user-events/edit-user user])}
-       [:span.icon.is-small [:i.fas.fa-pencil]]])]])
+(defn- format-date [iso]
+  (.toLocaleString (js/Date. iso) "de-DE"
+                   #js {:day "2-digit" :month "2-digit" :year "2-digit"
+                        :hour "2-digit" :minute "2-digit"}))
 
-(defn- users-table [users all-balances can-manage? sort-state]
-  [:div.table-container
-   [:table.table.is-fullwidth.is-striped.is-hoverable
-    [:thead
-     [:tr
-      [:th [col-header sort-state :name "Name"]]
-      [:th "Guthaben"]
-      [:th [col-header sort-state :role "Rolle"]]
-      [:th [col-header sort-state :status "Status"]]
-      [:th]]]
-    [:tbody
-     (for [user users]
-       ^{:key (:user/id user)}
-       [user-row user all-balances can-manage?])]]])
+(defn- event-details [event items-map]
+  (case (:event/type event)
+    :cart/checked-out
+    (let [entries (:checkout/entries event)
+          total   (reduce (fn [s {:keys [quantity unit-price]}] (+ s (* quantity unit-price))) 0 entries)]
+      (str (str/join ", "
+                     (map (fn [{:keys [item-id quantity]}]
+                            (str quantity "× " (get-in items-map [item-id :item/name] "?")))
+                          entries))
+           " · −" (format-price total)))
+    :balance/top-up-requested
+    (format-price (:top-up/amount event))
+    ""))
+
+(defn- user-row [user all-balances can-manage? expanded-users]
+  (let [expanded? (contains? @expanded-users (:user/id user))]
+    [:tr
+     [:td (:user/name user)]
+     [:td (format-price (get all-balances (:user/id user) 0))]
+     [:td [role-cell user]]
+     [:td [status-tag (:user/status user)]]
+     [:td
+      [:button.button.is-ghost.is-small
+       {:on-click #(swap! expanded-users
+                          (fn [s] (if (contains? s (:user/id user))
+                                    (disj s (:user/id user))
+                                    (conj s (:user/id user)))))}
+       [:span.icon.is-small
+        [:i {:class (str "fas " (if expanded? "fa-chevron-up" "fa-chevron-down"))}]]]]]))
+
+(defn- user-event-panel [user items-map on-top-up on-checkout on-edit]
+  (let [events-sub        (re-frame/subscribe [::subs/user-events-for (:user/id user)])
+        users-map-sub     (re-frame/subscribe [::user-subs/users-map])
+        current-user-sub  (re-frame/subscribe [::subs/current-user])
+        show-all?         (r/atom false)]
+    (fn [user items-map on-top-up on-checkout on-edit]
+      (let [all-events    @events-sub
+            users-map     @users-map-sub
+            current-user  @current-user-sub
+            can-confirm?  (permissions/can? (:user/role current-user) :confirm-top-ups)
+            shown         (if (or @show-all? (<= (count all-events) 30))
+                            all-events
+                            (take 30 all-events))]
+        [:div {:style {:padding "1rem 1.5rem"}}
+         [:div.buttons {:style {:margin-bottom "0.75rem"}}
+          (when on-edit
+            [:button.button.is-small
+             {:on-click on-edit}
+             [:span.icon.is-small [:i.fas.fa-pencil]]
+             [:span "Nutzer bearbeiten"]])
+          [:button.button.is-small
+           {:on-click on-top-up}
+           [:span.icon.is-small [:i.fas.fa-coins]]
+           [:span "Einzahlung"]]
+          [:button.button.is-small
+           {:on-click on-checkout}
+           [:span.icon.is-small [:i.fas.fa-shopping-cart]]
+           [:span "Einkauf erfassen"]]]
+         (if (empty? all-events)
+           [:p.is-size-7.has-text-grey "Keine Aktivitäten vorhanden."]
+           [:<>
+            [:table.table.is-fullwidth.is-narrow.is-size-7
+             [:tbody
+              (for [event shown]
+                (let [status     (:event/status event)
+                      cancelled? (#{:voided :cancelled} status)
+                      by-admin?  (not= (:event/actor event) (:user/id user))]
+                  ^{:key (:event/id event)}
+                  [:tr {:class (when cancelled? "has-text-grey")}
+                   [:td {:style {:white-space "nowrap"}} (format-date (:event/timestamp event))]
+                   [:td {:style {:white-space "nowrap"}}
+                    (case (:event/type event)
+                      :cart/checked-out         "Einkauf"
+                      :balance/top-up-requested "Einzahlung"
+                      "")
+                    (when by-admin?
+                      [:span.tag.is-info.is-light.ml-1 {:style {:font-size "0.65rem" :vertical-align "middle"}}
+                       (str "via " (get-in users-map [(:event/actor event) :user/name]))])]
+                   [:td (event-details event items-map)]
+                   [:td {:style {:white-space "nowrap"}}
+                    (let [voidable? (or (= status :active)
+                                        (and (= status :confirmed)
+                                             (= (:event/actor event) (:user/id current-user))
+                                             can-confirm?))]
+                      (cond
+                        voidable?
+                        [:button.button.is-danger.is-outlined.is-small
+                         {:on-click #(if (= :cart/checked-out (:event/type event))
+                                       (re-frame/dispatch [::item-events/void-checkout (:event/id event)])
+                                       (re-frame/dispatch [::top-up-events/cancel-top-up (:event/id event)]))}
+                         "Stornieren"]
+
+                        (#{:voided :cancelled} status)
+                        [:span.tag.is-danger.is-light "Storniert"]))]]))]]
+            (when (and (not @show-all?) (> (count all-events) 30))
+              [:a.is-size-7
+               {:on-click #(reset! show-all? true) :style {:cursor "pointer"}}
+               "Mehr anzeigen"])])]))))
+
+(defn- users-table [users all-balances can-manage? sort-state expanded-users items-map on-action]
+  [:div {:style {:background    "var(--color-surface)"
+                 :border        "1px solid var(--color-outline)"
+                 :border-radius "var(--radius)"
+                 :box-shadow    "var(--shadow)"
+                 :overflow      "hidden"}}
+   [:div.table-container
+    [:table.table.is-fullwidth.is-hoverable
+     [:thead
+      [:tr
+       [:th [col-header sort-state :name "Name"]]
+       [:th {:style {:width "1%" :white-space "nowrap"}} "Guthaben"]
+       [:th {:style {:width "1%" :white-space "nowrap"}} [col-header sort-state :role "Rolle"]]
+       [:th {:style {:width "1%" :white-space "nowrap"}} [col-header sort-state :status "Status"]]
+       [:th {:style {:width "1%"}}]]]
+     [:tbody
+      (for [user users]
+        ^{:key (:user/id user)}
+        [:<>
+         [user-row user all-balances can-manage? expanded-users]
+         (when (contains? @expanded-users (:user/id user))
+           [:tr
+            [:td {:col-span 5}
+             [user-event-panel user items-map
+              #(on-action {:type :top-up   :user user})
+              #(on-action {:type :checkout :user user})
+              (when can-manage? #(re-frame/dispatch [::user-events/edit-user user]))]]])])]]]])
 
 (defn users-page []
-  (let [all-users    (re-frame/subscribe [::user-subs/all-users])
-        all-balances (re-frame/subscribe [::subs/all-balances])
-        editing-user (re-frame/subscribe [::user-subs/editing-user])
-        can-manage?  (re-frame/subscribe [::user-subs/can-manage-users?])
-        add-open?    (r/atom false)
-        sort-state   (r/atom {:col :name :dir :asc})]
+  (let [all-users      (re-frame/subscribe [::user-subs/all-users])
+        all-balances   (re-frame/subscribe [::subs/all-balances])
+        editing-user   (re-frame/subscribe [::user-subs/editing-user])
+        can-manage?    (re-frame/subscribe [::user-subs/can-manage-users?])
+        items          (re-frame/subscribe [::item-subs/items])
+        items-map      (re-frame/subscribe [::item-subs/items-map])
+        add-open?      (r/atom false)
+        sort-state     (r/atom {:col :name :dir :asc})
+        expanded-users (r/atom #{})
+        drawer-state   (r/atom nil)]
     (fn []
       (let [users (apply-sort @all-users @sort-state)]
         [:<>
@@ -106,7 +211,8 @@
               [:span "Hinzufügen"]]
              [:span])]
           [:div {:style {:padding "1.5rem"}}
-           [users-table users @all-balances @can-manage? sort-state]]]
+           [users-table users @all-balances @can-manage? sort-state expanded-users @items-map
+            #(reset! drawer-state %)]]]
 
          [drawer {:open?    @add-open?
                   :on-close #(reset! add-open? false)
@@ -118,4 +224,16 @@
                   :title    "Nutzer bearbeiten"}
           (when @editing-user
             [edit-user-form @editing-user :admin
-             #(re-frame/dispatch [::user-events/close-edit])])]]))))
+             #(re-frame/dispatch [::user-events/close-edit])])]
+
+         [drawer {:open?    (some? @drawer-state)
+                  :on-close #(reset! drawer-state nil)
+                  :title    (case (:type @drawer-state)
+                              :top-up   "Einzahlung"
+                              :checkout "Einkauf erfassen"
+                              "")}
+          (when-let [{:keys [type user]} @drawer-state]
+            (case type
+              :top-up   [admin-top-up-form {:user user :on-close #(reset! drawer-state nil)}]
+              :checkout [checkout-form {:user user :items @items :on-close #(reset! drawer-state nil)}]
+              nil))]]))))

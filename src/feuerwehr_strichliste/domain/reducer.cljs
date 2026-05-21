@@ -81,6 +81,15 @@
   (let [uid (or (:event/subject event) (:top-up/user-id event))]
     (update-in snapshot [:balances uid] - (:top-up/amount event))))
 
+(defmethod reduce-event :transaction/voided
+  [snapshot {:keys [event/subject checkout/entries]}]
+  (reduce (fn [snap {:keys [item-id quantity unit-price]}]
+            (-> snap
+                (update-in [:balances subject] (fnil + 0) (* quantity unit-price))
+                (update-in [:items item-id :item/stock] + quantity)))
+          snapshot
+          entries))
+
 (defmethod reduce-event :auth/sign-in-attempted
   [snapshot _event]
   snapshot)
