@@ -113,7 +113,11 @@
                [:button.button.is-light.is-small
                 {:on-click #(re-frame/dispatch [::events/navigate :top-ups])}
                 [:span.icon.is-small [:i.fas.fa-coins]]
-                [:span "Einzahlungen"]]])]
+                [:span "Einzahlungen"]]
+               [:button.button.is-light.is-small
+                {:on-click #(re-frame/dispatch [::events/navigate :activity])}
+                [:span.icon.is-small [:i.fas.fa-list]]
+                [:span "Aktivität"]]])]
            [:div.top-nav-right
             (when-not pane?
               [:div.top-nav-balance-area

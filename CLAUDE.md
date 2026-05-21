@@ -35,6 +35,14 @@ This is a ClojureScript SPA using the **re-frame** pattern (unidirectional data 
 1. Adding a path in `routes/routes` atom
 2. Defining a component and `(defmethod routes/panels :your-panel-name [] [your-component])`
 
+**Current routes** (defined in `core.cljs`):
+- `/` — `:home` — user selection screen
+- `/overview` — `:overview` — main consumption UI (item grid + session pane)
+- `/users` — `:users` — sortable user table (admin nav)
+- `/top-ups` — `:top-ups` — top-up confirmation table (admin nav)
+- `/history` — `:history` — personal event history for the current user
+- `/activity` — `:activity` — full audit log of all events, most recent first (admin nav)
+
 The `::events/navigate` event triggers the `:navigate` effect which calls `pushy/set-token!`, causing pushy to dispatch `::events/set-active-panel` with the matched panel keyword.
 
 **Build targets** (defined in `shadow-cljs.edn`):

@@ -17,6 +17,7 @@
    [feuerwehr-strichliste.pages.users :refer [users-page]]
    [feuerwehr-strichliste.pages.top-ups :refer [top-ups-page]]
    [feuerwehr-strichliste.pages.history :refer [history-page]]
+   [feuerwehr-strichliste.pages.activity :refer [activity-page]]
    [feuerwehr-strichliste.top-up.events]
    [feuerwehr-strichliste.top-up.subs]))
 
@@ -27,12 +28,14 @@
 (defmethod panels :users-panel [] [users-page])
 (defmethod panels :top-ups-panel [] [top-ups-page])
 (defmethod panels :history-panel [] [history-page])
+(defmethod panels :activity-panel [] [activity-page])
 
 (def routes ["/" {""         :home
                   "overview" :overview
                   "users"    :users
                   "top-ups"  :top-ups
-                  "history"  :history}])
+                  "history"  :history
+                  "activity" :activity}])
 
 (defn- parse [url]
   (bidi/match-route routes url))
