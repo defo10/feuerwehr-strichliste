@@ -43,7 +43,7 @@
             (filter #(or (and (= :cart/checked-out (:event/type %))
                               (= uid (:event/actor %)))
                          (and (= :balance/top-up-requested (:event/type %))
-                              (= uid (:top-up/user-id %)))))
+                              (= uid (or (:event/subject %) (:top-up/user-id %))))))
             (group-by :event/timestamp)
             (sort-by key)
             reverse

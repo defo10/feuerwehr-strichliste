@@ -172,7 +172,7 @@
                               :event/id        id
                               :event/timestamp ts
                               :event/actor     user-id
-                              :top-up/user-id  (:user-id pending-tu)
+                              :event/subject   (:user-id pending-tu)
                               :top-up/amount   (:amount pending-tu)}))]
                       [snapshot event])
                     [snap1 nil])

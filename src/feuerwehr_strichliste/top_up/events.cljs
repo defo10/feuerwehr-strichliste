@@ -15,7 +15,7 @@
                         event-log)]
     (when request
       {:top-up/id           request-id
-       :top-up/user-id      (:top-up/user-id request)
+       :top-up/user-id      (or (:event/subject request) (:top-up/user-id request))
        :top-up/amount       (:top-up/amount request)
        :top-up/requested-by (:event/actor request)
        :top-up/status       (if resolved? :resolved :pending)})))
@@ -77,8 +77,8 @@
                           :event/id          id
                           :event/timestamp   (.toISOString (js/Date.))
                           :event/actor       actor-id
+                          :event/subject     (:top-up/user-id top-up)
                           :top-up/request-id request-id
-                          :top-up/user-id    (:top-up/user-id top-up)
                           :top-up/amount     (:top-up/amount top-up)}))]
                   {:db       (assoc db :snapshot snapshot :event-log (conj (:event-log db) event))
                    :persist! {:events [event] :snapshot snapshot}})

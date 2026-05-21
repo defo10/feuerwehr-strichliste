@@ -14,12 +14,17 @@
  (fn-traced [_ _]
    db/empty-db))
 
+(defn- migrate-event [event]
+  (if-let [uid (:top-up/user-id event)]
+    (-> event (assoc :event/subject uid) (dissoc :top-up/user-id))
+    event))
+
 (re-frame/reg-event-db
  ::initialize-from-storage
  (fn-traced [_ [_ {:keys [snapshot event-log]}]]
    (assoc db/empty-db
           :snapshot  snapshot
-          :event-log event-log)))
+          :event-log (mapv migrate-event event-log))))
 
 (re-frame/reg-event-fx
  ::navigate

@@ -41,12 +41,12 @@
     :balance/top-up-requested
     [:td.is-size-7.has-text-grey
      [:span.has-text-weight-semibold (format-price (:top-up/amount event))]
-     (str " für " (get-in users-map [(:top-up/user-id event) :user/name] "?"))]
+     (str " für " (get-in users-map [(:event/subject event) :user/name] "?"))]
 
     :balance/top-up-cancelled
     [:td.is-size-7.has-text-grey
      [:span.has-text-weight-semibold (format-price (:top-up/amount event))]
-     (str " für " (get-in users-map [(:top-up/user-id event) :user/name] "?"))]
+     (str " für " (get-in users-map [(:event/subject event) :user/name] "?"))]
 
     :balance/top-up-confirmed
     (let [req (first (filter #(= (:event/id %) (:top-up/request-id event)) event-log))]
@@ -54,7 +54,7 @@
        (when req
          [:<>
           [:span.has-text-weight-semibold (format-price (:top-up/amount req))]
-          (str " für " (get-in users-map [(:top-up/user-id req) :user/name] "?"))])])
+          (str " für " (get-in users-map [(:event/subject req) :user/name] "?"))])])
 
     :item/restocked
     [:td.is-size-7.has-text-grey
@@ -75,11 +75,18 @@
     [:td]))
 
 (defn- event-row [event users-map items-map event-log]
-  [:tr
-   [:td.is-size-7.has-text-grey (format-date (:event/timestamp event))]
-   [:td (event-type-label (:event/type event))]
-   [:td (get-in users-map [(:event/actor event) :user/name] "?")]
-   [details-cell event users-map items-map event-log]])
+  (let [actor-id   (:event/actor event)
+        subject-id (:event/subject event)
+        actor-name (get-in users-map [actor-id :user/name] "?")
+        nutzer     (if (and subject-id (not= subject-id actor-id))
+                     (str (get-in users-map [subject-id :user/name] "?")
+                          " (durch " actor-name ")")
+                     actor-name)]
+    [:tr
+     [:td.is-size-7.has-text-grey (format-date (:event/timestamp event))]
+     [:td (event-type-label (:event/type event))]
+     [:td nutzer]
+     [details-cell event users-map items-map event-log]]))
 
 (defn activity-page []
   (let [event-log (re-frame/subscribe [::app-subs/event-log])

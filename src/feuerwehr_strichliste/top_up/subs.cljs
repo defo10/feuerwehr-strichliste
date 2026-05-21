@@ -14,7 +14,7 @@
                :balance/top-up-requested
                (assoc m (:event/id event)
                       {:top-up/id           (:event/id event)
-                       :top-up/user-id      (:top-up/user-id event)
+                       :top-up/user-id      (or (:event/subject event) (:top-up/user-id event))
                        :top-up/amount       (:top-up/amount event)
                        :top-up/requested-at (:event/timestamp event)
                        :top-up/requested-by (:event/actor event)

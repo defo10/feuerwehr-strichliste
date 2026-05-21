@@ -89,6 +89,7 @@
    [:event/timestamp  string?]
    [:event/actor      string?]
    [:event/type       [:= :cart/checked-out]]
+   [:event/subject    {:optional true} string?]
    [:checkout/entries [:sequential
                        [:map
                         [:item-id    string?]
@@ -134,7 +135,7 @@
    [:event/timestamp string?]
    [:event/actor     string?]
    [:event/type      [:= :balance/top-up-requested]]
-   [:top-up/user-id  string?]
+   [:event/subject   string?]
    [:top-up/amount   pos-int?]])
 
 (def TopUpConfirmedEvent
@@ -151,8 +152,8 @@
    [:event/timestamp    string?]
    [:event/actor        string?]
    [:event/type         [:= :balance/top-up-cancelled]]
+   [:event/subject      string?]
    [:top-up/request-id  string?]
-   [:top-up/user-id     string?]
    [:top-up/amount      pos-int?]])
 
 (def TopUp

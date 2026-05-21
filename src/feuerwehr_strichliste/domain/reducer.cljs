@@ -58,25 +58,28 @@
               image-key (assoc :item/image-key image-key))))
 
 (defmethod reduce-event :cart/checked-out
-  [snapshot {:keys [event/actor checkout/entries]}]
-  (reduce (fn [snap {:keys [item-id quantity unit-price]}]
-            (-> snap
-                (update-in [:balances actor] (fnil - 0) (* quantity unit-price))
-                (update-in [:items item-id :item/stock] - quantity)))
-          snapshot
-          entries))
+  [snapshot {:keys [event/actor event/subject checkout/entries]}]
+  (let [uid (or subject actor)]
+    (reduce (fn [snap {:keys [item-id quantity unit-price]}]
+              (-> snap
+                  (update-in [:balances uid] (fnil - 0) (* quantity unit-price))
+                  (update-in [:items item-id :item/stock] - quantity)))
+            snapshot
+            entries)))
 
 (defmethod reduce-event :balance/top-up-requested
-  [snapshot {:keys [top-up/user-id top-up/amount]}]
-  (update-in snapshot [:balances user-id] (fnil + 0) amount))
+  [snapshot event]
+  (let [uid (or (:event/subject event) (:top-up/user-id event))]
+    (update-in snapshot [:balances uid] (fnil + 0) (:top-up/amount event))))
 
 (defmethod reduce-event :balance/top-up-confirmed
   [snapshot _event]
   snapshot)
 
 (defmethod reduce-event :balance/top-up-cancelled
-  [snapshot {:keys [top-up/user-id top-up/amount]}]
-  (update-in snapshot [:balances user-id] - amount))
+  [snapshot event]
+  (let [uid (or (:event/subject event) (:top-up/user-id event))]
+    (update-in snapshot [:balances uid] - (:top-up/amount event))))
 
 (defmethod reduce-event :auth/sign-in-attempted
   [snapshot _event]
