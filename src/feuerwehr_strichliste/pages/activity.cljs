@@ -105,18 +105,23 @@
        [:div {:style {:padding "1.5rem"}}
         (if (empty? @event-log)
           [:p.has-text-grey "Keine Aktivitäten vorhanden."]
-          [:div.table-container
-           [:table.table.is-fullwidth.is-striped.is-hoverable
-            [:thead
-             [:tr
-              [:th "Zeit"]
-              [:th "Ereignis"]
-              [:th "Nutzer"]
-              [:th "Details"]]]
-            [:tbody
-             (let [log @event-log
-                   um  @users-map
-                   im  @items-map]
-               (for [event (reverse log)]
-                 ^{:key (:event/id event)}
-                 [event-row event um im log]))]]])]])))
+          [:div {:style {:background    "var(--color-surface)"
+                         :border        "1px solid var(--color-outline)"
+                         :border-radius "var(--radius)"
+                         :box-shadow    "var(--shadow)"
+                         :overflow      "hidden"}}
+           [:div.table-container
+            [:table.table.is-fullwidth.is-hoverable
+             [:thead
+              [:tr
+               [:th "Zeit"]
+               [:th "Ereignis"]
+               [:th "Nutzer"]
+               [:th "Details"]]]
+             [:tbody
+              (let [log @event-log
+                    um  @users-map
+                    im  @items-map]
+                (for [event (reverse log)]
+                  ^{:key (:event/id event)}
+                  [event-row event um im log]))]]]])]])))

@@ -42,7 +42,12 @@
                               (+ s (* quantity unit-price)))
                             0 entries)
         net       (- (or (:top-up/amount top-up) 0) order-total)]
-    [:div.box {:style {:margin-bottom "1rem"}}
+    [:div {:style {:background    "var(--color-surface)"
+                   :border        "1px solid var(--color-outline)"
+                   :border-radius "var(--radius)"
+                   :box-shadow    "var(--shadow)"
+                   :margin-bottom "1rem"
+                   :padding       "1.25rem"}}
      [:div {:style {:display         "flex"
                     :justify-content "space-between"
                     :align-items     "baseline"
