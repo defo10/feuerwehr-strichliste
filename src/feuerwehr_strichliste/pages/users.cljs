@@ -72,19 +72,18 @@
 
 (defn- user-row [user all-balances can-manage? expanded-users]
   (let [expanded? (contains? @expanded-users (:user/id user))]
-    [:tr
+    [:tr {:on-click #(swap! expanded-users
+                            (fn [s] (if (contains? s (:user/id user))
+                                      (disj s (:user/id user))
+                                      (conj s (:user/id user)))))
+          :style {:cursor "pointer"}}
      [:td (:user/name user)]
      [:td (format-price (get all-balances (:user/id user) 0))]
      [:td [role-cell user]]
      [:td [status-tag (:user/status user)]]
      [:td
-      [:button.button.is-ghost.is-small
-       {:on-click #(swap! expanded-users
-                          (fn [s] (if (contains? s (:user/id user))
-                                    (disj s (:user/id user))
-                                    (conj s (:user/id user)))))}
-       [:span.icon.is-small
-        [:i {:class (str "fas " (if expanded? "fa-chevron-up" "fa-chevron-down"))}]]]]]))
+      [:span.icon.is-small
+       [:i {:class (str "fas " (if expanded? "fa-chevron-up" "fa-chevron-down"))}]]]]))
 
 (defn- user-event-panel [user items-map on-top-up on-checkout on-edit]
   (let [events-sub        (re-frame/subscribe [::subs/user-events-for (:user/id user)])
@@ -176,7 +175,7 @@
         [:<>
          [user-row user all-balances can-manage? expanded-users]
          (when (contains? @expanded-users (:user/id user))
-           [:tr
+           [:tr.no-hover
             [:td {:col-span 5}
              [user-event-panel user items-map
               #(on-action {:type :top-up   :user user})

@@ -616,6 +616,8 @@
      :flex-direction "column"
      :padding        "0.5rem 0"}]
 
+   [".table.is-hoverable tbody tr.no-hover:hover" {:background-color "transparent !important"}]
+
    [:.alphabet-bar-letter
     {:flex            "1"
      :display         "flex"
