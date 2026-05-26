@@ -37,9 +37,9 @@
           (.disconnect obs)))
 
       :reagent-render
-      (fn [{:keys [used-letters id-prefix]}]
+      (fn [{:keys [used-letters id-prefix top]}]
         (let [active @active-letter]
-          [:div.alphabet-bar
+          [:div.alphabet-bar (when top {:style {:top top}})
            (doall (for [letter alphabet]
                     (let [active?  (= letter active)
                           enabled? (contains? used-letters letter)]

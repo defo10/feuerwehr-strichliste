@@ -610,8 +610,8 @@
     {:position       "fixed"
      :right          0
      :top            0
+     :bottom         0
      :width          (px 44)
-     :height         "100vh"
      :display        "flex"
      :flex-direction "column"
      :padding        "0.5rem 0"}]

@@ -79,7 +79,8 @@
                                               (disj s (:user/id user))
                                               (conj s (:user/id user)))))
                   :style {:cursor "pointer"}}
-           anchor-id (assoc :id anchor-id))
+           anchor-id (assoc :id anchor-id
+                            :style {:cursor "pointer" :scroll-margin-top "4rem"}))
      [:td (:user/name user)]
      [:td (format-price (get all-balances (:user/id user) 0))]
      [:td [role-cell user]]
@@ -237,7 +238,7 @@
             #(reset! drawer-state %)]]]
 
          (when name-sort?
-           [alphabet-bar {:used-letters used-letters :id-prefix "users-letter-"}])
+           [alphabet-bar {:used-letters used-letters :id-prefix "users-letter-" :top "4rem"}])
 
          [drawer {:open?    @add-open?
                   :on-close #(reset! add-open? false)
