@@ -52,32 +52,34 @@
   (let [top-ups   (re-frame/subscribe [::top-up-subs/top-ups-sorted])
         users-map (re-frame/subscribe [::user-subs/users-map])]
     (fn []
-      [:div
-       [:nav.top-nav
-        [:button.button.is-ghost
-         {:on-click #(re-frame/dispatch [::events/navigate :overview])}
-         [:span.icon [:i.fas.fa-arrow-left]]
-         [:span "Zurück"]]
-        [:span.top-nav-name "Einzahlungen"]
-        [:span]]
+      (let [top-ups   @top-ups
+            users-map @users-map]
+        [:div
+         [:nav.top-nav
+          [:button.button.is-ghost
+           {:on-click #(re-frame/dispatch [::events/navigate :overview])}
+           [:span.icon [:i.fas.fa-arrow-left]]
+           [:span "Zurück"]]
+          [:span.top-nav-name "Einzahlungen"]
+          [:span]]
 
-       [:div {:style {:padding "1.5rem"}}
-        (if (empty? @top-ups)
-          [:p.has-text-grey "Keine Einzahlungen vorhanden."]
-          [:div {:style {:background    "var(--color-surface)"
-                         :border        "1px solid var(--color-outline)"
-                         :border-radius "var(--radius)"
-                         :box-shadow    "var(--shadow)"
-                         :overflow      "hidden"}}
-           [:div.table-container
-            [:table.table.is-fullwidth.is-hoverable
-             [:thead
-              [:tr
-               [:th "Nutzer"]
-               [:th "Betrag"]
-               [:th "Eingereicht"]
-               [:th "Status"]]]
-             [:tbody
-              (for [top-up @top-ups]
-                ^{:key (:top-up/id top-up)}
-                [top-up-row top-up @users-map])]]]])]])))
+         [:div {:style {:padding "1.5rem"}}
+          (if (empty? top-ups)
+            [:p.has-text-grey "Keine Einzahlungen vorhanden."]
+            [:div {:style {:background    "var(--color-surface)"
+                           :border        "1px solid var(--color-outline)"
+                           :border-radius "var(--radius)"
+                           :box-shadow    "var(--shadow)"
+                           :overflow      "hidden"}}
+             [:div.table-container
+              [:table.table.is-fullwidth.is-hoverable
+               [:thead
+                [:tr
+                 [:th "Nutzer"]
+                 [:th "Betrag"]
+                 [:th "Eingereicht"]
+                 [:th "Status"]]]
+               [:tbody
+                (for [top-up top-ups]
+                  ^{:key (:top-up/id top-up)}
+                  [top-up-row top-up users-map])]]]])]]))))
