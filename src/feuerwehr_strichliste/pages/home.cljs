@@ -1,5 +1,7 @@
 (ns feuerwehr-strichliste.pages.home
   (:require
+   [clojure.string :as str]
+   [reagent.core :as r]
    [re-frame.core :as re-frame]
    [feuerwehr-strichliste.user.subs :as user-subs]
    [feuerwehr-strichliste.auth.subs :as auth-subs]
@@ -9,18 +11,26 @@
    [feuerwehr-strichliste.auth.views :refer [pin-modal]]))
 
 (defn home-page []
-  (let [by-letter (re-frame/subscribe [::user-subs/users-by-letter])
-        pin-state (re-frame/subscribe [::auth-subs/pin-state])]
+  (let [all-users    (re-frame/subscribe [::user-subs/all-users])
+        pin-state    (re-frame/subscribe [::auth-subs/pin-state])
+        search-query (r/atom "")]
     (fn []
-      (let [{:keys [user] :as pin} @pin-state]
+      (let [{:keys [user] :as pin} @pin-state
+            q            (str/lower-case (or @search-query ""))
+            users        (if (str/blank? q)
+                           @all-users
+                           (filter #(str/includes? (str/lower-case (:user/name %)) q) @all-users))
+            by-letter    (sort-by first (group-by #(first (:user/name %)) users))
+            used-letters (set (map first by-letter))]
         [:div.page
          [:div.page-header
           [:h1.page-title "Wer bist du?"]
-          [search-bar]]
+          [search-bar {:value     @search-query
+                       :on-change #(reset! search-query %)}]]
          [:div.user-list
-          (for [[letter users] @by-letter]
+          (for [[letter group] by-letter]
             [:div {:id (str "letter-" letter) :key letter}
-             (for [u users]
+             (for [u group]
                ^{:key (:user/id u)} [user-card u])])]
-         [alphabet-bar]
+         [alphabet-bar {:used-letters used-letters :id-prefix "letter-"}]
          (when user [pin-modal pin])]))))

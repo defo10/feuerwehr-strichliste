@@ -8,11 +8,6 @@
    [day8.re-frame.tracing :refer-macros [fn-traced]]))
 
 (re-frame/reg-event-db
- ::set-search-query
- (fn-traced [db [_ query]]
-   (assoc-in db [:ui :search-query] query)))
-
-(re-frame/reg-event-db
  ::edit-user
  (fn-traced [db [_ user]]
             (assoc-in db [:ui :editing-user] user)))
@@ -83,15 +78,15 @@
 (re-frame/reg-event-fx
  :command/create-user
  (fn-traced [{:keys [db]} [_ {:keys [name role pin-hash]}]]
-   (let [{:keys [snapshot event]} (reducer/apply-event
-                                   (:snapshot db)
-                                   (fn [id]
-                                     {:event/type      :user/created
-                                      :event/id        id
-                                      :event/timestamp (.toISOString (js/Date.))
-                                      :event/actor     (get-in db [:ui :current-user-id])
-                                      :user/name       name
-                                      :user/role       role
-                                      :user/pin-hash   pin-hash}))]
-     {:db       (assoc db :snapshot snapshot :event-log (conj (:event-log db) event))
-      :persist! {:events [event] :snapshot snapshot}})))
+            (let [{:keys [snapshot event]} (reducer/apply-event
+                                            (:snapshot db)
+                                            (fn [id]
+                                              {:event/type      :user/created
+                                               :event/id        id
+                                               :event/timestamp (.toISOString (js/Date.))
+                                               :event/actor     (get-in db [:ui :current-user-id])
+                                               :user/name       name
+                                               :user/role       role
+                                               :user/pin-hash   pin-hash}))]
+              {:db       (assoc db :snapshot snapshot :event-log (conj (:event-log db) event))
+               :persist! {:events [event] :snapshot snapshot}})))

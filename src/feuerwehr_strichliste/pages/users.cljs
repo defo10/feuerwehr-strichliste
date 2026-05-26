@@ -8,6 +8,8 @@
    [feuerwehr-strichliste.user.subs :as user-subs]
    [feuerwehr-strichliste.user.events :as user-events]
    [feuerwehr-strichliste.user.views :refer [new-user-form edit-user-form role-labels status-labels]]
+   [feuerwehr-strichliste.user.search-bar :refer [search-bar]]
+   [feuerwehr-strichliste.user.alphabet-bar :refer [alphabet-bar]]
    [feuerwehr-strichliste.item.subs :as item-subs]
    [feuerwehr-strichliste.item.events :as item-events]
    [feuerwehr-strichliste.item.views :refer [checkout-form format-price]]
@@ -70,13 +72,14 @@
     (format-price (:top-up/amount event))
     ""))
 
-(defn- user-row [user all-balances can-manage? expanded-users]
+(defn- user-row [user all-balances can-manage? expanded-users anchor-id]
   (let [expanded? (contains? @expanded-users (:user/id user))]
-    [:tr {:on-click #(swap! expanded-users
-                            (fn [s] (if (contains? s (:user/id user))
-                                      (disj s (:user/id user))
-                                      (conj s (:user/id user)))))
-          :style {:cursor "pointer"}}
+    [:tr (cond-> {:on-click #(swap! expanded-users
+                                    (fn [s] (if (contains? s (:user/id user))
+                                              (disj s (:user/id user))
+                                              (conj s (:user/id user)))))
+                  :style {:cursor "pointer"}}
+           anchor-id (assoc :id anchor-id))
      [:td (:user/name user)]
      [:td (format-price (get all-balances (:user/id user) 0))]
      [:td [role-cell user]]
@@ -155,32 +158,43 @@
                "Mehr anzeigen"])])]))))
 
 (defn- users-table [users all-balances can-manage? sort-state expanded-users items-map on-action]
-  [:div {:style {:background    "var(--color-surface)"
-                 :border        "1px solid var(--color-outline)"
-                 :border-radius "var(--radius)"
-                 :box-shadow    "var(--shadow)"
-                 :overflow      "hidden"}}
-   [:div.table-container
-    [:table.table.is-fullwidth.is-hoverable
-     [:thead
-      [:tr
-       [:th [col-header sort-state :name "Name"]]
-       [:th {:style {:width "1%" :white-space "nowrap"}} "Guthaben"]
-       [:th {:style {:width "1%" :white-space "nowrap"}} [col-header sort-state :role "Rolle"]]
-       [:th {:style {:width "1%" :white-space "nowrap"}} [col-header sort-state :status "Status"]]
-       [:th {:style {:width "1%"}}]]]
-     [:tbody
-      (for [user users]
-        ^{:key (:user/id user)}
-        [:<>
-         [user-row user all-balances can-manage? expanded-users]
-         (when (contains? @expanded-users (:user/id user))
-           [:tr.no-hover
-            [:td {:col-span 5}
-             [user-event-panel user items-map
-              #(on-action {:type :top-up   :user user})
-              #(on-action {:type :checkout :user user})
-              (when can-manage? #(re-frame/dispatch [::user-events/edit-user user]))]]])])]]]])
+  (let [name-sort? (= :name (:col @sort-state))
+        make-row   (fn [user & [anchor-id]]
+                     ^{:key (:user/id user)}
+                     [:<>
+                      [user-row user all-balances can-manage? expanded-users anchor-id]
+                      (when (contains? @expanded-users (:user/id user))
+                        [:tr.no-hover
+                         [:td {:col-span 5}
+                          [user-event-panel user items-map
+                           #(on-action {:type :top-up   :user user})
+                           #(on-action {:type :checkout :user user})
+                           (when can-manage? #(re-frame/dispatch [::user-events/edit-user user]))]]])])]
+    [:div {:style {:background    "var(--color-surface)"
+                   :border        "1px solid var(--color-outline)"
+                   :border-radius "var(--radius)"
+                   :box-shadow    "var(--shadow)"
+                   :overflow      "hidden"}}
+     [:div.table-container
+      [:table.table.is-fullwidth.is-hoverable
+       [:thead
+        [:tr
+         [:th [col-header sort-state :name "Name"]]
+         [:th {:style {:width "1%" :white-space "nowrap"}} "Guthaben"]
+         [:th {:style {:width "1%" :white-space "nowrap"}} [col-header sort-state :role "Rolle"]]
+         [:th {:style {:width "1%" :white-space "nowrap"}} [col-header sort-state :status "Status"]]
+         [:th {:style {:width "1%"}}]]]
+       [:tbody
+        (if name-sort?
+          (doall
+           (mapcat
+            (fn [group]
+              (let [letter    (-> (:user/name (first group)) first str/upper-case)
+                    anchor-id (str "users-letter-" letter)]
+                (cons (make-row (first group) anchor-id)
+                      (map make-row (rest group)))))
+            (partition-by #(-> (:user/name %) first str/upper-case) users)))
+          (map make-row users))]]]]))
 
 (defn users-page []
   (let [all-users      (re-frame/subscribe [::user-subs/all-users])
@@ -191,10 +205,18 @@
         items-map      (re-frame/subscribe [::item-subs/items-map])
         add-open?      (r/atom false)
         sort-state     (r/atom {:col :name :dir :asc})
+        search-query   (r/atom "")
         expanded-users (r/atom #{})
         drawer-state   (r/atom nil)]
     (fn []
-      (let [users (apply-sort @all-users @sort-state)]
+      (let [q            (str/lower-case (or @search-query ""))
+            filtered     (if (str/blank? q)
+                           @all-users
+                           (filter #(str/includes? (str/lower-case (:user/name %)) q) @all-users))
+            users        (apply-sort filtered @sort-state)
+            name-sort?   (= :name (:col @sort-state))
+            used-letters (when name-sort?
+                           (set (map #(-> (:user/name %) first str/upper-case) users)))]
         [:<>
          [:div
           [:nav.top-nav
@@ -203,15 +225,19 @@
             [:span.icon [:i.fas.fa-arrow-left]]
             [:span "Zurück"]]
            [:span.top-nav-name "Nutzer"]
+           [search-bar {:value @search-query :on-change #(reset! search-query %)}]
            (if @can-manage?
              [:button.button.is-primary.is-small
               {:on-click #(reset! add-open? true)}
               [:span.icon.is-small [:i.fas.fa-plus]]
               [:span "Hinzufügen"]]
              [:span])]
-          [:div {:style {:padding "1.5rem"}}
+          [:div {:style {:padding (if name-sort? "1.5rem 3.75rem 1.5rem 1.5rem" "1.5rem")}}
            [users-table users @all-balances @can-manage? sort-state expanded-users @items-map
             #(reset! drawer-state %)]]]
+
+         (when name-sort?
+           [alphabet-bar {:used-letters used-letters :id-prefix "users-letter-"}])
 
          [drawer {:open?    @add-open?
                   :on-close #(reset! add-open? false)

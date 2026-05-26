@@ -1,15 +1,13 @@
 (ns feuerwehr-strichliste.user.alphabet-bar
-  (:require [reagent.core :as r]
-            [re-frame.core :as re-frame]
-            [feuerwehr-strichliste.user.subs :as subs]))
+  (:require [reagent.core :as r]))
 
 (def ^:private alphabet "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-(defn- scroll-to-letter [letter]
-  (when-let [el (.getElementById js/document (str "letter-" letter))]
+(defn- scroll-to-letter [id-prefix letter]
+  (when-let [el (.getElementById js/document (str id-prefix letter))]
     (.scrollIntoView el)))
 
-(defn- make-observer [active-letter]
+(defn- make-observer [active-letter prefix-len]
   (js/IntersectionObserver.
    (fn [entries]
      (let [visible (->> (array-seq entries)
@@ -17,20 +15,20 @@
                         (sort-by #(.. % -boundingClientRect -top))
                         first)]
        (when visible
-         (reset! active-letter (subs (.. visible -target -id) 7)))))
+         (reset! active-letter (subs (.. visible -target -id) prefix-len)))))
    #js {:rootMargin "-10% 0px -80% 0px"}))
 
-(defn alphabet-bar []
-  (let [used          (re-frame/subscribe [::subs/used-letters])
-        active-letter (r/atom nil)
+(defn alphabet-bar [{:keys [used-letters id-prefix]}]
+  (let [active-letter (r/atom nil)
         observer      (atom nil)]
     (r/create-class
      {:component-did-mount
-      (fn []
-        (let [obs (make-observer active-letter)]
+      (fn [this]
+        (let [{:keys [id-prefix]} (r/props this)
+              obs (make-observer active-letter (count id-prefix))]
           (reset! observer obs)
           (doseq [letter alphabet]
-            (when-let [el (.getElementById js/document (str "letter-" letter))]
+            (when-let [el (.getElementById js/document (str id-prefix letter))]
               (.observe obs el)))))
 
       :component-will-unmount
@@ -39,16 +37,15 @@
           (.disconnect obs)))
 
       :reagent-render
-      (fn []
-        (let [active   @active-letter
-              used-set @used]
+      (fn [{:keys [used-letters id-prefix]}]
+        (let [active @active-letter]
           [:div.alphabet-bar
            (doall (for [letter alphabet]
-             (let [active?  (= letter active)
-                   enabled? (contains? used-set letter)]
-               [:div {:key      letter
-                      :class    (str "alphabet-bar-letter"
-                                     (when-not enabled? " inactive")
-                                     (when active? " active"))
-                      :on-click (when enabled? #(scroll-to-letter letter))}
-                letter])))]))})))
+                    (let [active?  (= letter active)
+                          enabled? (contains? used-letters letter)]
+                      [:div {:key      letter
+                             :class    (str "alphabet-bar-letter"
+                                            (when-not enabled? " inactive")
+                                            (when active? " active"))
+                             :on-click (when enabled? #(scroll-to-letter id-prefix letter))}
+                       letter])))]))})))

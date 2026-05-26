@@ -1,12 +1,8 @@
-(ns feuerwehr-strichliste.user.search-bar
-  (:require [re-frame.core :as re-frame]
-            [feuerwehr-strichliste.user.events :as events]
-            [feuerwehr-strichliste.user.subs :as subs]))
+(ns feuerwehr-strichliste.user.search-bar)
 
-(defn search-bar []
-  (let [query (re-frame/subscribe [::subs/search-query])]
-    [:input.search-bar
-     {:type        "search"
-      :placeholder "Filtern..."
-      :value       @query
-      :on-change   #(re-frame/dispatch [::events/set-search-query (.. % -target -value)])}]))
+(defn search-bar [{:keys [value on-change]}]
+  [:input.search-bar
+   {:type        "search"
+    :placeholder "Filtern..."
+    :value       value
+    :on-change   #(on-change (.. % -target -value))}])
