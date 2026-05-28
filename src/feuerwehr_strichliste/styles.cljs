@@ -45,6 +45,9 @@
      :color       "var(--color-on-surface)"
      :min-height  "100vh"}]
 
+   [:.button.is-ghost
+    ["&:hover" {:text-decoration "none"}]]
+
    ;; Bulma primary color override
    [:.button.is-primary
     {:background-color "var(--color-primary)"

@@ -21,14 +21,15 @@
 (def ^:private role-order   {:member 0 :kitchen 1 :admin 2})
 (def ^:private status-order {:active 0 :inactive 1 :suspended 2})
 
-(defn- sort-value [col user]
+(defn- sort-value [col user all-balances]
   (case col
-    :name   (some-> (:user/name user) str/lower-case)
-    :role   (role-order (:user/role user))
-    :status (status-order (:user/status user))))
+    :name    (some-> (:user/name user) str/lower-case)
+    :role    (role-order (:user/role user))
+    :status  (status-order (:user/status user))
+    :balance (get all-balances (:user/id user) 0)))
 
-(defn- apply-sort [users {:keys [col dir]}]
-  (let [sorted (sort-by #(sort-value col %) users)]
+(defn- apply-sort [users {:keys [col dir]} all-balances]
+  (let [sorted (sort-by #(sort-value col % all-balances) users)]
     (if (= dir :desc) (reverse sorted) sorted)))
 
 (defn- toggle-sort [sort-state col]
@@ -181,7 +182,7 @@
        [:thead
         [:tr
          [:th [col-header sort-state :name "Name"]]
-         [:th {:style {:width "1%" :white-space "nowrap"}} "Guthaben"]
+         [:th {:style {:width "1%" :white-space "nowrap"}} [col-header sort-state :balance "Guthaben"]]
          [:th {:style {:width "1%" :white-space "nowrap"}} [col-header sort-state :role "Rolle"]]
          [:th {:style {:width "1%" :white-space "nowrap"}} [col-header sort-state :status "Status"]]
          [:th {:style {:width "1%"}}]]]
@@ -214,7 +215,7 @@
             filtered     (if (str/blank? q)
                            @all-users
                            (filter #(str/includes? (str/lower-case (:user/name %)) q) @all-users))
-            users        (apply-sort filtered @sort-state)
+            users        (apply-sort filtered @sort-state @all-balances)
             name-sort?   (= :name (:col @sort-state))
             used-letters (when name-sort?
                            (set (map #(-> (:user/name %) first str/upper-case) users)))]
