@@ -195,7 +195,8 @@
           (str "Einkauf für " (:user/name user))]
          (for [{:item/keys [id name price stock]} items]
            ^{:key id}
-           [:div.form-field {:style {:display "flex" :align-items "center" :gap "0.5rem"}}
+           [:div {:style {:display "flex" :flex-direction "row" :align-items "center" :gap "0.5rem"
+                          :padding "0.375rem 0" :border-bottom "1px solid var(--color-outline)"}}
             [:span {:style {:flex 1}} name]
             [:span.is-size-7.has-text-grey (format-price price)]
             [:div.buttons.has-addons {:style {:margin 0}}
