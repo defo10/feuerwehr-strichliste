@@ -77,5 +77,6 @@
      (re-frame/dispatch-sync (if stored
                                [::events/initialize-from-storage stored]
                                [::events/initialize-db]))
+     (re-frame/dispatch [::events/navigate :home])
      (re-frame/dispatch [::item-events/load-images])
      (mount-root))))
