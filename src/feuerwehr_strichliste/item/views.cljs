@@ -148,23 +148,19 @@
 
          [:div.form-field
           [:label "Vorrat"]
-          [:input.price-input
-           {:type            "text"
-            :input-mode      "numeric"
-            :value           (str (:item/stock f))
-            :on-change       identity
-            :on-before-input (fn [e]
-                               (.preventDefault e)
-                               (when-let [d (.-data e)]
-                                 (when (re-matches #"\d" d)
-                                   (swap! form update :item/stock
-                                          (fn [s]
-                                            (let [n (+ (* s 10) (js/parseInt d))]
-                                              (if (< n 100000) n s)))))))
-            :on-key-down     (fn [e]
-                               (when (= "Backspace" (.-key e))
-                                 (.preventDefault e)
-                                 (swap! form update :item/stock #(quot % 10))))}]]
+          [:div.buttons.has-addons
+           [:button.button
+            {:type     "button"
+             :disabled (zero? (:item/stock f))
+             :on-click #(swap! form update :item/stock dec)}
+            [:span.icon [:i.fas.fa-minus]]]
+           [:span.button.is-static
+            {:style {:min-width "3rem" :justify-content "center"}}
+            (str (:item/stock f))]
+           [:button.button
+            {:type     "button"
+             :on-click #(swap! form update :item/stock inc)}
+            [:span.icon [:i.fas.fa-plus]]]]]
 
          [:div.form-actions
           [:button.button.is-primary.is-fullwidth

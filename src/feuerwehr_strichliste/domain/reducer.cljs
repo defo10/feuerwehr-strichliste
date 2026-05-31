@@ -16,8 +16,8 @@
 (defmethod reduce-event :user/updated
   [snapshot {:keys [user/id user/name user/role user/status user/pin-hash]}]
   (cond-> (update-in snapshot [:users id] merge {:user/name   name
-                                                  :user/role   role
-                                                  :user/status status})
+                                                 :user/role   role
+                                                 :user/status status})
     pin-hash (assoc-in [:users id :user/pin-hash] pin-hash)))
 
 (defmethod reduce-event :user/created
@@ -38,6 +38,10 @@
                             :item/image-key image-key}))
 
 (defmethod reduce-event :item/restocked
+  [snapshot {:keys [item/id item/stock]}]
+  (assoc-in snapshot [:items id :item/stock] stock))
+
+(defmethod reduce-event :item/stock-corrected
   [snapshot {:keys [item/id item/stock]}]
   (assoc-in snapshot [:items id :item/stock] stock))
 

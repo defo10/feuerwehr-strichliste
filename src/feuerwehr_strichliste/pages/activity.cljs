@@ -19,6 +19,7 @@
     :item/created             "Artikel erstellt"
     :item/edited              "Artikel bearbeitet"
     :item/restocked           "Artikel aufgefüllt"
+    :item/stock-corrected     "Inventur"
     :cart/checked-out         "Einkauf"
     :balance/top-up-requested "Einzahlung beantragt"
     :balance/top-up-confirmed "Einzahlung bestätigt"
@@ -60,6 +61,11 @@
     [:td.is-size-7.has-text-grey
      [:span.has-text-weight-semibold (str "+" (:item/stock event))]
      (str " · " (get-in items-map [(:item/id event) :item/name] "?"))]
+
+    :item/stock-corrected
+    [:td.is-size-7.has-text-grey
+     (str (get-in items-map [(:item/id event) :item/name] "?") " ")
+     [:span.has-text-weight-semibold (str (:item/stock-before event) " → " (:item/stock event))]]
 
     :item/created  [:td.is-size-7.has-text-grey (:item/name event)]
     :item/edited   [:td.is-size-7.has-text-grey (:item/name event)]

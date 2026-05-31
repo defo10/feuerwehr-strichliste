@@ -80,22 +80,23 @@
                           [snapshot event])
                         [(:snapshot db) nil])
 
-                      [snapshot2 restock-event]
+                      [snapshot2 correction-event]
                       (if stock-changed?
                         (let [{:keys [snapshot event]}
                               (reducer/apply-event
                                snapshot1
                                (fn [ev-id]
-                                 {:event/type      :item/restocked
-                                  :event/id        ev-id
-                                  :event/timestamp ts
-                                  :event/actor     user-id
-                                  :item/id         id
-                                  :item/stock      stock}))]
+                                 {:event/type         :item/stock-corrected
+                                  :event/id           ev-id
+                                  :event/timestamp    ts
+                                  :event/actor        user-id
+                                  :item/id            id
+                                  :item/stock-before  (:item/stock current)
+                                  :item/stock         stock}))]
                           [snapshot event])
                         [snapshot1 nil])
 
-                      events (filterv some? [edit-event restock-event])]
+                      events (filterv some? [edit-event correction-event])]
                   (if (seq events)
                     (let [base (-> db (assoc :snapshot snapshot2) (update :event-log into events))
                           db'  (if image
