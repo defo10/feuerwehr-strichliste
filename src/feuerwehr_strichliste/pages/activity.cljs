@@ -1,5 +1,6 @@
 (ns feuerwehr-strichliste.pages.activity
   (:require
+   [reagent.core :as r]
    [re-frame.core :as re-frame]
    [feuerwehr-strichliste.events :as events]
    [feuerwehr-strichliste.subs :as app-subs]
@@ -12,21 +13,44 @@
                    #js {:day "2-digit" :month "2-digit" :year "2-digit"
                         :hour "2-digit" :minute "2-digit"}))
 
+(def ^:private event-type-options
+  [[:cart/checked-out         "Einkauf"]
+   [:balance/top-up-requested "Einzahlung beantragt"]
+   [:balance/top-up-confirmed "Einzahlung bestätigt"]
+   [:balance/top-up-cancelled "Einzahlung storniert"]
+   [:item/restocked           "Artikel aufgefüllt"]
+   [:item/stock-corrected     "Inventur"]
+   [:item/created             "Artikel erstellt"]
+   [:item/edited              "Artikel bearbeitet"]
+   [:user/created             "Nutzer erstellt"]
+   [:user/updated             "Nutzer aktualisiert"]
+   [:auth/sign-in-attempted   "Anmeldeversuch"]
+   [:auth/signed-out          "Abgemeldet"]])
+
+(def ^:private event-type-labels (into {} event-type-options))
+
 (defn- event-type-label [event-type]
-  (case event-type
-    :user/created             "Nutzer erstellt"
-    :user/updated             "Nutzer aktualisiert"
-    :item/created             "Artikel erstellt"
-    :item/edited              "Artikel bearbeitet"
-    :item/restocked           "Artikel aufgefüllt"
-    :item/stock-corrected     "Inventur"
-    :cart/checked-out         "Einkauf"
-    :balance/top-up-requested "Einzahlung beantragt"
-    :balance/top-up-confirmed "Einzahlung bestätigt"
-    :balance/top-up-cancelled "Einzahlung storniert"
-    :auth/sign-in-attempted   "Anmeldeversuch"
-    :auth/signed-out          "Abgemeldet"
-    (name event-type)))
+  (get event-type-labels event-type (name event-type)))
+
+(defn- sort-value [col event users-map]
+  (case col
+    :time (.getTime (js/Date. (:event/timestamp event)))
+    :type (name (:event/type event))
+    :user (get-in users-map [(:event/actor event) :user/name] "")))
+
+(defn- apply-sort [events {:keys [col dir]} users-map]
+  (let [sorted (sort-by #(sort-value col % users-map) events)]
+    (if (= dir :desc) (reverse sorted) sorted)))
+
+(defn- toggle-sort [sort-state col]
+  (swap! sort-state (fn [{c :col d :dir}]
+                      {:col col :dir (if (and (= c col) (= d :asc)) :desc :asc)})))
+
+(defn- col-header [sort-state col label]
+  (let [{c :col d :dir} @sort-state
+        active? (= c col)]
+    [:button.col-header {:on-click #(toggle-sort sort-state col)}
+     label (when active? (if (= d :asc) " ▲" " ▼"))]))
 
 (defn- details-cell [event users-map items-map event-log]
   (case (:event/type event)
@@ -94,40 +118,116 @@
      [:td nutzer]
      [details-cell event users-map items-map event-log]]))
 
-(defn activity-page []
-  (let [event-log (re-frame/subscribe [::app-subs/event-log])
-        users-map (re-frame/subscribe [::user-subs/users-map])
-        items-map (re-frame/subscribe [::item-subs/items-map])]
-    (fn []
-      [:div
-       [:nav.top-nav
-        [:button.button.is-ghost
-         {:on-click #(re-frame/dispatch [::events/navigate :overview])}
-         [:span.icon [:i.fas.fa-arrow-left]]
-         [:span "Zurück"]]
-        [:span.top-nav-name "Aktivitätslog"]
-        [:span]]
+(defn- filter-bar [type-filter user-filter date-from date-to users-map]
+  (let [type-open? (r/atom false)
+        close!     #(reset! type-open? false)]
+    (r/create-class
+     {:component-did-mount    #(.addEventListener js/document "click" close!)
+      :component-will-unmount #(.removeEventListener js/document "click" close!)
+      :reagent-render
+      (fn [type-filter user-filter date-from date-to users-map]
+        [:div {:style {:margin-bottom "1rem" :display "flex" :flex-wrap "wrap" :gap "0.5rem" :align-items "center"}}
+         [:div.dropdown {:class    (when @type-open? "is-active")
+                         :on-click #(.stopPropagation %)}
+          [:div.dropdown-trigger
+           [:button.button.is-small
+            {:on-click #(swap! type-open? not)}
+            [:span (if (empty? @type-filter)
+                     "Alle Ereignisse"
+                     (str (count @type-filter) " Ereignistypen"))]
+            [:span.icon.is-small [:i.fas.fa-angle-down]]]]
+          [:div.dropdown-menu {:style {:min-width "14rem"}}
+           [:div.dropdown-content
+            (for [[k label] event-type-options]
+              ^{:key k}
+              [:label.dropdown-item {:style {:display "flex" :gap "0.5rem" :cursor "pointer"}}
+               [:input {:type      "checkbox"
+                        :checked   (contains? @type-filter k)
+                        :on-change #(swap! type-filter (if (contains? @type-filter k) disj conj) k)}]
+               label])]]]
+         [:div.select.is-small
+          [:select {:value     (or @user-filter "")
+                    :on-change #(reset! user-filter (let [v (.. % -target -value)]
+                                                      (when (seq v) v)))}
+           [:option {:value ""} "Alle Nutzer"]
+           (for [[id u] (sort-by (comp :user/name val) users-map)]
+             ^{:key id} [:option {:value id} (:user/name u)])]]
+         [:input.input.is-small
+          {:type      "date"
+           :style     {:width "auto"}
+           :value     (or @date-from "")
+           :on-change #(reset! date-from (let [v (.. % -target -value)]
+                                           (when (seq v) v)))}]
+         [:input.input.is-small
+          {:type      "date"
+           :style     {:width "auto"}
+           :value     (or @date-to "")
+           :on-change #(reset! date-to (let [v (.. % -target -value)]
+                                         (when (seq v) v)))}]
+         (when (or (seq @type-filter) @user-filter @date-from @date-to)
+           [:button.button.is-small.is-ghost
+            {:on-click #(do (reset! type-filter #{}) (reset! user-filter nil)
+                            (reset! date-from nil) (reset! date-to nil))}
+            "Zurücksetzen"])])})))
 
-       [:div {:style {:padding "1.5rem"}}
-        (if (empty? @event-log)
-          [:p.has-text-grey "Keine Aktivitäten vorhanden."]
-          [:div {:style {:background    "var(--color-surface)"
-                         :border        "1px solid var(--color-outline)"
-                         :border-radius "var(--radius)"
-                         :box-shadow    "var(--shadow)"
-                         :overflow      "hidden"}}
-           [:div.table-container
-            [:table.table.is-fullwidth.is-hoverable
-             [:thead
-              [:tr
-               [:th "Zeit"]
-               [:th "Ereignis"]
-               [:th "Nutzer"]
-               [:th "Details"]]]
-             [:tbody
-              (let [log @event-log
-                    um  @users-map
-                    im  @items-map]
-                (for [event (reverse log)]
-                  ^{:key (:event/id event)}
-                  [event-row event um im log]))]]]])]])))
+(defn- log-table [events sort-state um im log]
+  (if (empty? events)
+    [:p.has-text-grey "Keine Aktivitäten vorhanden."]
+    [:div {:style {:background    "var(--color-surface)"
+                   :border        "1px solid var(--color-outline)"
+                   :border-radius "var(--radius)"
+                   :box-shadow    "var(--shadow)"
+                   :overflow      "hidden"}}
+     [:div.table-container
+      [:table.table.is-fullwidth.is-hoverable
+       [:thead
+        [:tr
+         [:th [col-header sort-state :time "Zeit"]]
+         [:th [col-header sort-state :type "Ereignis"]]
+         [:th [col-header sort-state :user "Nutzer"]]
+         [:th "Details"]]]
+       [:tbody
+        (for [event events]
+          ^{:key (:event/id event)}
+          [event-row event um im log])]]]]))
+
+(defn activity-page []
+  (let [event-log   (re-frame/subscribe [::app-subs/event-log])
+        users-map   (re-frame/subscribe [::user-subs/users-map])
+        items-map   (re-frame/subscribe [::item-subs/items-map])
+        sort-state  (r/atom {:col :time :dir :desc})
+        type-filter (r/atom #{})
+        user-filter (r/atom nil)
+        date-from   (r/atom nil)
+        date-to     (r/atom nil)]
+    (fn []
+      (let [log      @event-log
+            um       @users-map
+            im       @items-map
+            filtered (->> log
+                          (filter (fn [e]
+                                    (or (empty? @type-filter)
+                                        (contains? @type-filter (:event/type e)))))
+                          (filter (fn [e]
+                                    (or (nil? @user-filter)
+                                        (= @user-filter (:event/actor e))
+                                        (= @user-filter (:event/subject e)))))
+                          (filter (fn [e]
+                                    (let [t (.getTime (js/Date. (:event/timestamp e)))]
+                                      (and (or (nil? @date-from)
+                                               (>= t (.getTime (js/Date. @date-from))))
+                                           (or (nil? @date-to)
+                                               (<= t (+ (.getTime (js/Date. @date-to)) 86399999))))))))
+            events   (apply-sort filtered @sort-state um)]
+        [:div
+         [:nav.top-nav
+          [:button.button.is-ghost
+           {:on-click #(re-frame/dispatch [::events/navigate :overview])}
+           [:span.icon [:i.fas.fa-arrow-left]]
+           [:span "Zurück"]]
+          [:span.top-nav-name "Aktivitätslog"]
+          [:span]]
+
+         [:div {:style {:padding "1.5rem"}}
+          [filter-bar type-filter user-filter date-from date-to um]
+          [log-table events sort-state um im log]]]))))
