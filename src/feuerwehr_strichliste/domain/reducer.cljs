@@ -6,6 +6,13 @@
 (defn- append-history-entry! [history entry]
   (m/assert schema/UserHistory (conj history entry)))
 
+(defn- set-history-entry-status! [history entry-id status]
+  (m/assert schema/UserHistory
+            (mapv #(if (= entry-id (:history/id %))
+                     (assoc % :history/status status)
+                     %)
+                  history)))
+
 (def empty-snapshot
   {:users    {}
    :balances {}
@@ -79,6 +86,7 @@
                     :history/type      :checkout
                     :history/timestamp timestamp
                     :history/actor     actor
+                    :history/status    :active
                     :checkout/entries  entries}))))
 
 (defmethod reduce-event :balance/top-up-requested
@@ -91,25 +99,32 @@
                     :history/type      :top-up
                     :history/timestamp timestamp
                     :history/actor     actor
+                    :history/status    :active
                     :top-up/amount     amount}))))
 
 (defmethod reduce-event :balance/top-up-confirmed
-  [snapshot _event]
-  snapshot)
+  [snapshot {:keys [event/subject top-up/request-id]}]
+  (update-in snapshot [:users subject :user/history]
+             set-history-entry-status! request-id :confirmed))
 
 (defmethod reduce-event :balance/top-up-cancelled
-  [snapshot event]
-  (let [uid (or (:event/subject event) (:top-up/user-id event))]
-    (update-in snapshot [:balances uid] - (:top-up/amount event))))
+  [snapshot {:keys [event/subject top-up/request-id top-up/amount] :as event}]
+  (let [uid (or subject (:top-up/user-id event))]
+    (-> snapshot
+        (update-in [:balances uid] - amount)
+        (update-in [:users uid :user/history]
+                   set-history-entry-status! request-id :cancelled))))
 
 (defmethod reduce-event :transaction/voided
-  [snapshot {:keys [event/subject checkout/entries]}]
-  (reduce (fn [snap {:keys [item-id quantity unit-price]}]
-            (-> snap
-                (update-in [:balances subject] (fnil + 0) (* quantity unit-price))
-                (update-in [:items item-id :item/stock] + quantity)))
-          snapshot
-          entries))
+  [snapshot {:keys [event/subject void/original-id checkout/entries]}]
+  (-> (reduce (fn [snap {:keys [item-id quantity unit-price]}]
+                (-> snap
+                    (update-in [:balances subject] (fnil + 0) (* quantity unit-price))
+                    (update-in [:items item-id :item/stock] + quantity)))
+              snapshot
+              entries)
+      (update-in [:users subject :user/history]
+                 set-history-entry-status! original-id :voided)))
 
 (defmethod reduce-event :auth/sign-in-attempted
   [snapshot _event]

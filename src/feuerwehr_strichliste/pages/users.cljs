@@ -60,8 +60,8 @@
                         :hour "2-digit" :minute "2-digit"}))
 
 (defn- event-details [event items-map]
-  (case (:event/type event)
-    :cart/checked-out
+  (case (:history/type event)
+    :checkout
     (let [entries (:checkout/entries event)
           total   (reduce (fn [s {:keys [quantity unit-price]}] (+ s (* quantity unit-price))) 0 entries)]
       (str (str/join ", "
@@ -69,7 +69,7 @@
                             (str quantity "× " (get-in items-map [item-id :item/name] "?")))
                           entries))
            " · −" (format-price total)))
-    :balance/top-up-requested
+    :top-up
     (format-price (:top-up/amount event))
     ""))
 
@@ -123,37 +123,38 @@
            [:<>
             [:table.table.is-fullwidth.is-narrow.is-size-7
              [:tbody
-              (for [event shown]
-                (let [status     (:event/status event)
-                      cancelled? (#{:voided :cancelled} status)
-                      by-admin?  (not= (:event/actor event) (:user/id user))]
-                  ^{:key (:event/id event)}
-                  [:tr {:class (when cancelled? "has-text-grey")}
-                   [:td {:style {:white-space "nowrap"}} (format-date (:event/timestamp event))]
-                   [:td {:style {:white-space "nowrap"}}
-                    (case (:event/type event)
-                      :cart/checked-out         "Einkauf"
-                      :balance/top-up-requested "Einzahlung"
-                      "")
-                    (when by-admin?
-                      [:span.tag.is-info.is-light.ml-1 {:style {:font-size "0.65rem" :vertical-align "middle"}}
-                       (str "via " (get-in users-map [(:event/actor event) :user/name]))])]
-                   [:td (event-details event items-map)]
-                   [:td {:style {:white-space "nowrap"}}
-                    (let [voidable? (or (= status :active)
-                                        (and (= status :confirmed)
-                                             (= (:event/actor event) (:user/id current-user))
-                                             can-confirm?))]
-                      (cond
-                        voidable?
-                        [:button.button.is-danger.is-outlined.is-small
-                         {:on-click #(if (= :cart/checked-out (:event/type event))
-                                       (re-frame/dispatch [::item-events/void-checkout (:event/id event)])
-                                       (re-frame/dispatch [::top-up-events/cancel-top-up (:event/id event)]))}
-                         "Stornieren"]
+              (doall
+               (for [event shown]
+                 (let [status     (:history/status event)
+                       cancelled? (#{:voided :cancelled} status)
+                       by-admin?  (not= (:history/actor event) (:user/id user))]
+                   ^{:key (:history/id event)}
+                   [:tr {:class (when cancelled? "has-text-grey")}
+                    [:td {:style {:white-space "nowrap"}} (format-date (:history/timestamp event))]
+                    [:td {:style {:white-space "nowrap"}}
+                     (case (:history/type event)
+                       :checkout  "Einkauf"
+                       :top-up    "Einzahlung"
+                       "")
+                     (when by-admin?
+                       [:span.tag.is-info.is-light.ml-1 {:style {:font-size "0.65rem" :vertical-align "middle"}}
+                        (str "via " (get-in users-map [(:history/actor event) :user/name]))])]
+                    [:td (event-details event items-map)]
+                    [:td {:style {:white-space "nowrap"}}
+                     (let [voidable? (or (= status :active)
+                                         (and (= status :confirmed)
+                                              (= (:history/actor event) (:user/id current-user))
+                                              can-confirm?))]
+                       (cond
+                         voidable?
+                         [:button.button.is-danger.is-outlined.is-small
+                          {:on-click #(if (= :checkout (:history/type event))
+                                        (re-frame/dispatch [::item-events/void-checkout (:history/id event)])
+                                        (re-frame/dispatch [::top-up-events/cancel-top-up (:history/id event)]))}
+                          "Stornieren"]
 
-                        (#{:voided :cancelled} status)
-                        [:span.tag.is-danger.is-light "Storniert"]))]]))]]
+                         (#{:voided :cancelled} status)
+                         [:span.tag.is-danger.is-light "Storniert"]))]])))]]
             (when (and (not @show-all?) (> (count all-events) 30))
               [:a.is-size-7
                {:on-click #(reset! show-all? true) :style {:cursor "pointer"}}

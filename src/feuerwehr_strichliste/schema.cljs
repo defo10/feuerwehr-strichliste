@@ -31,6 +31,7 @@
    [:history/type      [:= :checkout]]
    [:history/timestamp string?]
    [:history/actor     string?]
+   [:history/status    [:enum :active :voided]]
    [:checkout/entries  [:sequential CheckoutEntry]]])
 
 (def TopUpHistoryEntry
@@ -39,6 +40,7 @@
    [:history/type      [:= :top-up]]
    [:history/timestamp string?]
    [:history/actor     string?]
+   [:history/status    [:enum :active :confirmed :cancelled]]
    [:top-up/amount     pos-int?]])
 
 (def HistoryEntry
@@ -173,6 +175,7 @@
    [:event/timestamp    string?]
    [:event/actor        string?]
    [:event/type         [:= :balance/top-up-confirmed]]
+   [:event/subject      string?]
    [:top-up/request-id  string?]])
 
 (def TopUpCancelledEvent

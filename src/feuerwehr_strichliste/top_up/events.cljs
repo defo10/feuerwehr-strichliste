@@ -48,6 +48,7 @@
                           :event/id          id
                           :event/timestamp   ts
                           :event/actor       actor-id
+                          :event/subject     user-id
                           :top-up/request-id (:event/id req-event)}))
                       events [req-event confirm-event]]
                   {:db       (-> db
@@ -80,7 +81,9 @@
  ::confirm-top-up
  (fn-traced [{:keys [db]} [_ request-id]]
             (let [actor-id   (get-in db [:ui :current-user-id])
-                  actor-role (get-in db [:snapshot :users actor-id :user/role])]
+                  actor-role (get-in db [:snapshot :users actor-id :user/role])
+                  top-up     (find-top-up (:event-log db) request-id)
+                  user-id    (:top-up/user-id top-up)]
               (if (permissions/can? actor-role :confirm-top-ups)
                 (let [{:keys [snapshot event]}
                       (reducer/apply-event
@@ -90,6 +93,7 @@
                           :event/id          id
                           :event/timestamp   (.toISOString (js/Date.))
                           :event/actor       actor-id
+                          :event/subject     user-id
                           :top-up/request-id request-id}))]
                   {:db       (assoc db :snapshot snapshot :event-log (conj (:event-log db) event))
                    :persist! {:events [event] :snapshot snapshot}})

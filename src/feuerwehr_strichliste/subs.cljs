@@ -34,47 +34,16 @@
 
 (re-frame/reg-sub
  ::user-events-for
- :<- [::event-log]
- (fn [event-log [_ user-id]]
-   (let [voided-ids    (->> event-log
-                            (filter #(= :transaction/voided (:event/type %)))
-                            (map :void/original-id)
-                            set)
-         cancelled-ids (->> event-log
-                            (filter #(= :balance/top-up-cancelled (:event/type %)))
-                            (map :top-up/request-id)
-                            set)
-         confirmed-ids (->> event-log
-                            (filter #(= :balance/top-up-confirmed (:event/type %)))
-                            (map :top-up/request-id)
-                            set)]
-     (->> event-log
-          (filter #(or (and (= :cart/checked-out (:event/type %))
-                            (= user-id (or (:event/subject %) (:event/actor %))))
-                       (and (= :balance/top-up-requested (:event/type %))
-                            (= user-id (or (:event/subject %) (:top-up/user-id %))))))
-          (map #(let [id (:event/id %)]
-                  (assoc % :event/status
-                         (cond
-                           (contains? voided-ids id)    :voided
-                           (contains? cancelled-ids id) :cancelled
-                           (contains? confirmed-ids id) :confirmed
-                           :else                        :active))))
-          reverse))))
+ (fn [db [_ user-id]]
+   (rseq (get-in db [:snapshot :users user-id :user/history] []))))
 
 (re-frame/reg-sub
  ::user-history
- :<- [::event-log]
  :<- [::current-user]
- (fn [[event-log user] _]
+ (fn [user _]
    (when user
-     (let [uid (:user/id user)]
-       (->> event-log
-            (filter #(or (and (= :cart/checked-out (:event/type %))
-                              (= uid (:event/actor %)))
-                         (and (= :balance/top-up-requested (:event/type %))
-                              (= uid (or (:event/subject %) (:top-up/user-id %))))))
-            (group-by :event/timestamp)
-            (sort-by key)
-            reverse
-            (map val))))))
+     (->> (:user/history user)
+          (group-by :history/timestamp)
+          (sort-by key)
+          reverse
+          (map val)))))
