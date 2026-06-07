@@ -13,6 +13,7 @@
    [feuerwehr-strichliste.domain.effects]
    [feuerwehr-strichliste.item.events :as item-events]
    [feuerwehr-strichliste.components.error-overlay :refer [error-overlay]]
+   [feuerwehr-strichliste.components.dev-toolbar :refer [dev-toolbar]]
    [feuerwehr-strichliste.pages.home :refer [home-page]]
    [feuerwehr-strichliste.pages.overview :refer [overview-page]]
    [feuerwehr-strichliste.pages.users :refer [users-page]]
@@ -58,11 +59,13 @@
   (let [active-panel (re-frame/subscribe [::subs/active-panel])]
     [:<>
      (panels @active-panel)
-     [error-overlay]]))
+     [error-overlay]
+     [dev-toolbar]]))
 
 (defn dev-setup []
   (when config/debug?
-    (println "dev mode")))
+    (println "dev mode")
+    (re-frame/reg-global-interceptor db/check-schema-interceptor)))
 
 (defn ^:dev/after-load mount-root []
   (styles/inject!)
@@ -72,16 +75,17 @@
     (rdom/render [main-panel] root-el)))
 
 (defn init []
-  (pushy/start! history)
+  ;; dev-setup and initialize-empty-db must run before pushy/start! so the schema
+  ;; interceptor always sees a valid db shape when the first route event fires.
   (dev-setup)
-  (when ^boolean goog.DEBUG
-    (re-frame/reg-global-interceptor db/check-schema-interceptor))
+  (re-frame/dispatch-sync [::events/initialize-empty-db])
+  (pushy/start! history)
   (rfid-listener/mount!)
   (storage/init!
    (fn [stored]
      (re-frame/dispatch-sync (if stored
                                [::events/initialize-from-storage stored]
-                               [::events/initialize-db]))
+                               [::events/initialize-empty-db]))
      (re-frame/dispatch [::events/navigate :home])
      (re-frame/dispatch [::item-events/load-images])
      (mount-root))))

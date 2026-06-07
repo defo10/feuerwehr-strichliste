@@ -8,53 +8,18 @@
             [malli.error :as me]
             [re-frame.core :as re-frame]))
 
-(def ^:private seed-items
-  [{:item/type :drink :item/name "Kaffee"     :item/price 150 :item/stock 50}
-   {:item/type :drink :item/name "Wasser"     :item/price  80 :item/stock 100}
-   {:item/type :drink :item/name "Cola"       :item/price 150 :item/stock 24}
-   {:item/type :drink :item/name "Apfelsaft"  :item/price 120 :item/stock 24}
-   {:item/type :drink :item/name "Bier"       :item/price 200 :item/stock 20}
-   {:item/type :food  :item/name "Brötchen"   :item/price  80 :item/stock 10}
-   {:item/type :food  :item/name "Snickers"   :item/price 150 :item/stock 15}
-   {:item/type :food  :item/name "Chips"      :item/price 100 :item/stock 10}])
-
-(defn- seed-events []
-  (concat
-   (map (fn [user]
-          {:event/type      :user/created
-           :event/timestamp "2026-04-18T00:00:00Z"
-           :event/actor     "system"
-           :user/name       (:user/name user)
-           :user/role       (:user/role user)
-           :user/pin-hash   (:user/pin-hash user)})
-        (vals (schema/generate-users 10)))
-   (map (fn [item]
-          (merge {:event/type      :item/created
-                  :event/timestamp "2026-04-18T00:00:00Z"
-                  :event/actor     "system"}
-                 item))
-        seed-items)))
-
 (def check-schema-interceptor
   (re-frame/after
    (fn [db]
-     (when ^boolean goog.DEBUG
-       (when-not (m/validate schema/AppDb db)
-         (throw (ex-info (str "db schema check failed: "
-                              (me/humanize (m/explain schema/AppDb db)))
-                         {})))))))
+     (when-not (m/validate schema/AppDb db)
+       (throw (ex-info (str "db schema check failed: "
+                            (me/humanize (m/explain schema/AppDb db)))
+                       {}))))))
 
 (def ^:private default-ui
   (merge auth-db/default-ui user-db/default-ui item-db/default-ui))
 
 (def empty-db
-  {:snapshot reducer/empty-snapshot
-   :ui       default-ui})
-
-(def default-db
-  (let [snapshot (reduce (fn [snapshot seed-event]
-                           (:snapshot (reducer/apply-event snapshot #(assoc seed-event :event/id %))))
-                         reducer/empty-snapshot
-                         (seed-events))]
-    {:snapshot snapshot
-     :ui       default-ui}))
+  {:snapshot     reducer/empty-snapshot
+   :ui           default-ui
+   :active-panel :home-panel})
