@@ -1,7 +1,9 @@
 (ns feuerwehr-strichliste.domain.reducer
-  (:require [feuerwehr-strichliste.schema :as schema]
-            ["uuid" :refer [v7]]
-            [malli.core :as m]))
+  (:require
+   ["uuid" :refer [v7]]
+   [feuerwehr-strichliste.schema :as schema]
+   [malli.core :as m]
+   [malli.error :as me]))
 
 (defn- append-history-entry! [history entry]
   (m/assert schema/UserHistory (conj history entry)))
@@ -143,9 +145,19 @@
   [snapshot _event]
   snapshot)
 
+(defn- validateAndExplain [return-map]
+  (let [event (:event return-map)]
+    (if (m/validate schema/DomainEvent event)
+      true
+      (do
+        (js/console.error (ex-info (str "post condition violated: "
+                                        (me/humanize (m/explain schema/DomainEvent event)))
+                                   {}))
+        false))))
+
 ; build-event receives the assigned UUIDv7 id and must return a complete event — see schema/DomainEvent.
 (defn apply-event [snapshot build-event]
-  {:post [(m/validate schema/DomainEvent (:event %))]}
+  {:post [(validateAndExplain %)]}
   (let [id        (v7)
         event     (build-event id)
         snapshot' (reduce-event snapshot event)]

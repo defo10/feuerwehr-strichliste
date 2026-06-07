@@ -97,6 +97,9 @@
                              (assoc-in [:ui :pending-rfid] nil))
                :persist! {:events [event] :snapshot snapshot}})))
 
+(defn hash-pin [pin]
+  (.hashSync bcrypt pin 10))
+
 ;; Legacy event kept for compatibility
 (re-frame/reg-event-fx
  :command/create-user
@@ -107,7 +110,7 @@
                                               {:event/type      :user/created
                                                :event/id        id
                                                :event/timestamp (.toISOString (js/Date.))
-                                               :event/actor     (get-in db [:ui :current-user-id])
+                                               :event/actor     (or (get-in db [:ui :current-user-id]) "system")
                                                :user/name       name
                                                :user/role       role
                                                :user/pin-hash   pin-hash}))]

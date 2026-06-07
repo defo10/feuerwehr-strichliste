@@ -13,7 +13,6 @@
    [feuerwehr-strichliste.domain.effects]
    [feuerwehr-strichliste.item.events :as item-events]
    [feuerwehr-strichliste.components.error-overlay :refer [error-overlay]]
-   [feuerwehr-strichliste.components.dev-toolbar :refer [dev-toolbar]]
    [feuerwehr-strichliste.pages.home :refer [home-page]]
    [feuerwehr-strichliste.pages.overview :refer [overview-page]]
    [feuerwehr-strichliste.pages.users :refer [users-page]]
@@ -59,8 +58,7 @@
   (let [active-panel (re-frame/subscribe [::subs/active-panel])]
     [:<>
      (panels @active-panel)
-     [error-overlay]
-     [dev-toolbar]]))
+     [error-overlay]]))
 
 (defn dev-setup []
   (when config/debug?
