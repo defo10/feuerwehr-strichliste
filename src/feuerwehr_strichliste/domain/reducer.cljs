@@ -3,6 +3,9 @@
             ["uuid" :refer [v7]]
             [malli.core :as m]))
 
+(defn- append-history-entry! [history entry]
+  (m/assert schema/UserHistory (conj history entry)))
+
 (def empty-snapshot
   {:users    {}
    :balances {}
@@ -27,7 +30,8 @@
              :user/name     name
              :user/role     role
              :user/pin-hash pin-hash
-             :user/status   :active}))
+             :user/status   :active
+             :user/history  []}))
 
 (defmethod reduce-event :item/edited
   [snapshot {:keys [item/id item/type item/name item/price item/image-key]}]
@@ -62,19 +66,32 @@
               image-key (assoc :item/image-key image-key))))
 
 (defmethod reduce-event :cart/checked-out
-  [snapshot {:keys [event/actor event/subject checkout/entries]}]
+  [snapshot {:keys [event/id event/actor event/subject event/timestamp checkout/entries]}]
   (let [uid (or subject actor)]
-    (reduce (fn [snap {:keys [item-id quantity unit-price]}]
-              (-> snap
-                  (update-in [:balances uid] (fnil - 0) (* quantity unit-price))
-                  (update-in [:items item-id :item/stock] - quantity)))
-            snapshot
-            entries)))
+    (-> (reduce (fn [snap {:keys [item-id quantity unit-price]}]
+                  (-> snap
+                      (update-in [:balances uid] (fnil - 0) (* quantity unit-price))
+                      (update-in [:items item-id :item/stock] - quantity)))
+                snapshot
+                entries)
+        (update-in [:users uid :user/history] append-history-entry!
+                   {:history/id        id
+                    :history/type      :checkout
+                    :history/timestamp timestamp
+                    :history/actor     actor
+                    :checkout/entries  entries}))))
 
 (defmethod reduce-event :balance/top-up-requested
-  [snapshot event]
-  (let [uid (or (:event/subject event) (:top-up/user-id event))]
-    (update-in snapshot [:balances uid] (fnil + 0) (:top-up/amount event))))
+  [snapshot {:keys [event/id event/actor event/subject event/timestamp top-up/amount] :as event}]
+  (let [uid (or subject (:top-up/user-id event))]
+    (-> snapshot
+        (update-in [:balances uid] (fnil + 0) amount)
+        (update-in [:users uid :user/history] append-history-entry!
+                   {:history/id        id
+                    :history/type      :top-up
+                    :history/timestamp timestamp
+                    :history/actor     actor
+                    :top-up/amount     amount}))))
 
 (defmethod reduce-event :balance/top-up-confirmed
   [snapshot _event]

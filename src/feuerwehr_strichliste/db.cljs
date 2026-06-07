@@ -37,17 +37,12 @@
 
 (def empty-db
   {:snapshot  reducer/empty-snapshot
-   :event-log []
    :ui        default-ui})
 
 (def default-db
-  (let [{:keys [snapshot event-log]}
-        (reduce (fn [{:keys [snapshot event-log]} seed-event]
-                  (let [{s :snapshot e :event}
-                        (reducer/apply-event snapshot #(assoc seed-event :event/id %))]
-                    {:snapshot s :event-log (conj event-log e)}))
-                {:snapshot reducer/empty-snapshot :event-log []}
+  (let [snapshot (reduce (fn [snapshot seed-event]
+                           (:snapshot (reducer/apply-event snapshot #(assoc seed-event :event/id %))))
+                         reducer/empty-snapshot
                 (seed-events))]
     {:snapshot  snapshot
-     :event-log event-log
      :ui        default-ui}))

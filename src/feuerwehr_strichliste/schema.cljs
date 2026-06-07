@@ -4,7 +4,6 @@
    [clojure.test.check.generators :as gen]
    [malli.generator :as mg]))
 
-
 (comment
   (.hashSync bcrypt "1234" 10))
 
@@ -20,13 +19,47 @@
    "Herbert Brandt" "Hildegard Seifert" "Manfred Böhm" "Gertrude Winter"
    "Horst Schumacher" "Elfriede Gruber" "Egon Pfeiffer" "Waltraud Stein"])
 
+(def CheckoutEntry
+  [:map
+   [:item-id    string?]
+   [:quantity   pos-int?]
+   [:unit-price pos-int?]])
+
+(def CheckoutHistoryEntry
+  [:map
+   [:history/id        string?]
+   [:history/type      [:= :checkout]]
+   [:history/timestamp string?]
+   [:history/actor     string?]
+   [:checkout/entries  [:sequential CheckoutEntry]]])
+
+(def TopUpHistoryEntry
+  [:map
+   [:history/id        string?]
+   [:history/type      [:= :top-up]]
+   [:history/timestamp string?]
+   [:history/actor     string?]
+   [:top-up/amount     pos-int?]])
+
+(def HistoryEntry
+  [:or CheckoutHistoryEntry TopUpHistoryEntry])
+
+(def UserHistory
+  [:and
+   [:vector HistoryEntry]
+   [:fn {:error/message "history entries must be in chronological order"}
+    (fn [entries]
+      (let [ts (map :history/timestamp entries)]
+        (every? true? (map #(<= (compare %1 %2) 0) ts (rest ts)))))]])
+
 (def User
   [:map
    [:user/id       string?]
    [:user/name     [:string {:gen/gen (gen/elements german-names)}]]
    [:user/role     [:enum :member :kitchen :admin]]
    [:user/pin-hash [:string {:gen/gen (gen/return "$2b$10$fSviXQEHvZ/dHtwvKUREbOFZcc9Recla6YM4vFMmgbLb9hyNLpij.")}]]
-   [:user/status   [:enum :active :inactive :suspended]]])
+   [:user/status   [:enum :active :inactive :suspended]]
+   [:user/history  {:gen/gen (gen/return [])} UserHistory]])
 
 (defn generate-users [n]
   (into {}
@@ -90,11 +123,7 @@
    [:event/actor      string?]
    [:event/type       [:= :cart/checked-out]]
    [:event/subject    {:optional true} string?]
-   [:checkout/entries [:sequential
-                       [:map
-                        [:item-id    string?]
-                        [:quantity   pos-int?]
-                        [:unit-price pos-int?]]]]])
+   [:checkout/entries [:sequential CheckoutEntry]]])
 
 (def ItemEditedEvent
   [:map
@@ -178,11 +207,7 @@
    [:event/subject     string?]
    [:void/original-id  string?]
    [:void/reason       {:optional true} string?]
-   [:checkout/entries  [:sequential
-                        [:map
-                         [:item-id    string?]
-                         [:quantity   pos-int?]
-                         [:unit-price pos-int?]]]]])
+   [:checkout/entries  [:sequential CheckoutEntry]]])
 
 (def DomainEvent
   [:multi {:dispatch :event/type}
@@ -198,12 +223,6 @@
    [:balance/top-up-confirmed  TopUpConfirmedEvent]
    [:balance/top-up-cancelled  TopUpCancelledEvent]
    [:transaction/voided        TransactionVoidedEvent]])
-
-(def Snapshot
-  [:map
-   [:users    [:map-of string? User]]
-   [:balances [:map-of string? number?]]
-   [:items    [:map-of string? Item]]])
 
 (comment
   (generate-users 1))

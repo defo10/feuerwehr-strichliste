@@ -16,10 +16,10 @@
                         :minute  "2-digit"}))
 
 (def ^:private th-style {:font-weight 500
-                          :color       "var(--color-on-surface-muted)"
-                          :font-size   "0.75rem"
-                          :padding     "0 0 0.3rem 0"
-                          :white-space "nowrap"})
+                         :color       "var(--color-on-surface-muted)"
+                         :font-size   "0.75rem"
+                         :padding     "0 0 0.3rem 0"
+                         :white-space "nowrap"})
 
 (defn- format-net [cents]
   (cond
@@ -34,9 +34,9 @@
     :else        "var(--color-on-surface-muted)"))
 
 (defn- session-card [events items-map]
-  (let [checkout  (some #(when (= :cart/checked-out (:event/type %)) %) events)
-        top-up    (some #(when (= :balance/top-up-requested (:event/type %)) %) events)
-        ts        (:event/timestamp (first events))
+  (let [checkout  (some #(when (= :checkout (:history/type %)) %) events)
+        top-up    (some #(when (= :top-up (:history/type %)) %) events)
+        ts        (:history/timestamp (first events))
         entries   (:checkout/entries checkout)
         order-total (reduce (fn [s {:keys [quantity unit-price]}]
                               (+ s (* quantity unit-price)))
@@ -97,11 +97,12 @@
          [:span.icon [:i.fas.fa-arrow-left]]
          [:span "Zurück"]]
         [:span.top-nav-name {:style {:position  "absolute"
-                                    :left      "50%"
-                                    :transform "translateX(-50%)"}} "Verlauf"]]
+                                     :left      "50%"
+                                     :transform "translateX(-50%)"}} "Verlauf"]]
        [:div {:style {:padding "1.5rem"}}
         (if (empty? @history)
           [:p {:style {:color "var(--color-on-surface-muted)"}} "Noch keine Aktivität"]
-          (for [group @history]
-            ^{:key (:event/timestamp (first group))}
-            [session-card group @items-map]))]])))
+          (doall
+           (for [group @history]
+             ^{:key (:history/timestamp (first group))}
+             [session-card group @items-map])))]])))
