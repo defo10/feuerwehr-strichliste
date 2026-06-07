@@ -13,9 +13,11 @@
 (defn home-page []
   (let [all-users    (re-frame/subscribe [::user-subs/all-users])
         pin-state    (re-frame/subscribe [::auth-subs/pin-state])
+        rfid-toast   (re-frame/subscribe [::auth-subs/rfid-toast])
         search-query (r/atom "")]
     (fn []
       (let [{:keys [user] :as pin} @pin-state
+            toast        @rfid-toast
             q            (str/lower-case (or @search-query ""))
             users        (if (str/blank? q)
                            @all-users
@@ -33,4 +35,7 @@
              (for [u group]
                ^{:key (:user/id u)} [user-card u])])]
          [alphabet-bar {:used-letters used-letters :id-prefix "letter-"}]
-         (when user [pin-modal pin])]))))
+         (when user [pin-modal pin])
+         (when toast
+           [:div.rfid-toast {:class (str "rfid-toast--" (name (:type toast)))}
+            (:message toast)])]))))

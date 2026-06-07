@@ -5,6 +5,7 @@
    [feuerwehr-strichliste.subs :as app-subs]
    [feuerwehr-strichliste.events :as events]
    [feuerwehr-strichliste.auth.events :as auth-events]
+   [feuerwehr-strichliste.auth.subs :as auth-subs]
    [feuerwehr-strichliste.item.subs :as item-subs]
    [feuerwehr-strichliste.item.events :as item-events]
    [feuerwehr-strichliste.user.subs :as user-subs]
@@ -83,14 +84,16 @@
         profile-open?   (re-frame/subscribe [::user-subs/profile-open?])
         pending-top-up  (re-frame/subscribe [::top-up-subs/pending-top-up])
         top-up-editing? (re-frame/subscribe [::top-up-subs/top-up-editing?])
+        pending-rfid    (re-frame/subscribe [::auth-subs/pending-rfid])
         pane-open?      (r/atom true)
         drawer-open?    (r/atom false)]
     (fn []
-      (let [user  @current-user
-            bal   @balance
-            tab   @active-tab
-            admin? (= :admin (:user/role user))
-            pane? @pane-open?]
+      (let [user        @current-user
+            bal         @balance
+            tab         @active-tab
+            admin?      (= :admin (:user/role user))
+            pane?       @pane-open?
+            rfid-string @pending-rfid]
         [:div.overview-layout
          [:div.main-content
           [:nav.top-nav
@@ -142,11 +145,11 @@
                [:button.item-card
                 {:on-click #(reset! drawer-open? true)
                  :style    {:background      "#4CAF50"
-                             :border-color    "#4CAF50"
-                             :color           "#fff"
-                             :cursor          "pointer"
-                             :justify-content "center"
-                             :align-items     "center"}}
+                            :border-color    "#4CAF50"
+                            :color           "#fff"
+                            :cursor          "pointer"
+                            :justify-content "center"
+                            :align-items     "center"}}
                 [:span.icon.is-large [:i.fas.fa-plus]]
                 [:span {:style {:font-size "0.9rem" :font-weight 600}} "Neu"]]])
             (for [item (get @items-by-type tab [])]
@@ -168,4 +171,17 @@
                   :title    "Mein Profil"}
           (when @profile-open?
             [edit-user-form user :self
-             #(re-frame/dispatch [::user-events/close-profile])])]]))))
+             #(re-frame/dispatch [::user-events/close-profile])])]
+         (when rfid-string
+           [:div.rfid-confirm-overlay
+            {:on-click #(re-frame/dispatch [::auth-events/clear-pending-rfid])}
+            [:div.rfid-confirm-modal
+             {:on-click #(.stopPropagation %)}
+             [:p.rfid-confirm-message "Chip erkannt. Diesen Chip mit deinem Konto verknüpfen?"]
+             [:div.rfid-confirm-actions
+              [:button.button.is-primary
+               {:on-click #(re-frame/dispatch [::user-events/user-link-rfid rfid-string])}
+               "Ja, verknüpfen"]
+              [:button.button.is-light
+               {:on-click #(re-frame/dispatch [::auth-events/clear-pending-rfid])}
+               "Nein"]]]])]))))

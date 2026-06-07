@@ -636,7 +636,54 @@
     [:&:hover {:background "var(--color-outline)"}]
     [:&.inactive {:color "var(--color-on-surface-muted)" :cursor "default"}]
     [:&.active {:background "var(--color-primary)" :color "var(--color-on-primary)"
-                :transition "background 0.25s ease, color 0.25s ease"}]]])
+                :transition "background 0.25s ease, color 0.25s ease"}]]
+
+   [:.rfid-toast
+    {:position       "fixed"
+     :bottom         (rem 2)
+     :left           "50%"
+     :transform      "translateX(-50%)"
+     :padding        "0.75rem 1.5rem"
+     :border-radius  "var(--radius)"
+     :font-size      (rem 0.95)
+     :font-weight    600
+     :box-shadow     "var(--shadow-hover)"
+     :z-index        9999
+     :pointer-events "none"
+     :animation      "modal-in 0.2s ease"}
+    ["&.rfid-toast--error" {:background "var(--color-primary)"
+                            :color      "var(--color-on-primary)"}]]
+
+   [:.rfid-confirm-overlay
+    {:position        "fixed"
+     :inset           0
+     :z-index         1000
+     :display         "flex"
+     :align-items     "center"
+     :justify-content "center"
+     :animation       "overlay-in 0.2s ease forwards"}]
+
+   [:.rfid-confirm-modal
+    {:background     "var(--color-surface)"
+     :border-radius  "var(--radius)"
+     :padding        "2rem"
+     :max-width      (px 380)
+     :width          "90%"
+     :box-shadow     "var(--shadow-hover)"
+     :display        "flex"
+     :flex-direction "column"
+     :gap            "1.5rem"
+     :animation      "modal-in 0.2s ease"}]
+
+   [:.rfid-confirm-message
+    {:font-size   (rem 1.1)
+     :font-weight 500
+     :text-align  "center"}]
+
+   [:.rfid-confirm-actions
+    {:display         "flex"
+     :justify-content "center"
+     :gap             "0.75rem"}]])
 
 (defn inject! []
   (let [el (or (.getElementById js/document "app-styles")

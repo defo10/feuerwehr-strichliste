@@ -73,3 +73,45 @@
                              (assoc-in [:ui :active-tab] :drink))
                :persist! {:events [event] :snapshot snapshot}
                :navigate :home})))
+
+(re-frame/reg-event-db
+ ::clear-rfid-toast
+ (fn-traced [db _]
+            (assoc-in db [:ui :rfid-toast] nil)))
+
+(re-frame/reg-event-db
+ ::clear-pending-rfid
+ (fn-traced [db _]
+            (assoc-in db [:ui :pending-rfid] nil)))
+
+(re-frame/reg-event-fx
+ ::rfid-input
+ (fn-traced [{:keys [db]} [_ rfid-string]]
+            (case (:active-panel db)
+              :home-panel
+              (let [users  (vals (get-in db [:snapshot :users]))
+                    user   (first (filter (fn [u]
+                                            (when-let [h (:user/rfid-hash u)]
+                                              (bcrypt/compareSync rfid-string h)))
+                                          users))]
+                (if (and user (= :active (:user/status user)))
+                  (let [{:keys [snapshot event]} (reducer/apply-event
+                                                  (:snapshot db)
+                                                  (fn [id]
+                                                    {:event/type      :auth/sign-in-attempted
+                                                     :event/id        id
+                                                     :event/timestamp (.toISOString (js/Date.))
+                                                     :event/actor     (:user/id user)
+                                                     :auth/success    true}))]
+                    {:db       (-> db
+                                   (assoc :snapshot snapshot)
+                                   (assoc-in [:ui :current-user-id] (:user/id user)))
+                     :persist! {:events [event] :snapshot snapshot}
+                     :navigate :overview})
+                  {:db             (assoc-in db [:ui :rfid-toast] {:message "Chip nicht erkannt" :type :error})
+                   :dispatch-after {:ms 3000 :dispatch [::clear-rfid-toast]}}))
+
+              :overview-panel
+              {:db (assoc-in db [:ui :pending-rfid] rfid-string)}
+
+              {:db db})))

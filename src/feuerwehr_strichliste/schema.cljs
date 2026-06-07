@@ -59,12 +59,13 @@
 
 (def User
   [:map
-   [:user/id       string?]
-   [:user/name     [:string {:gen/gen (gen/elements german-names)}]]
-   [:user/role     [:enum :member :kitchen :admin]]
-   [:user/pin-hash [:string {:gen/gen (gen/return "$2b$10$fSviXQEHvZ/dHtwvKUREbOFZcc9Recla6YM4vFMmgbLb9hyNLpij.")}]]
-   [:user/status   [:enum :active :inactive :suspended]]
-   [:user/history  {:gen/gen (gen/return [])} UserHistory]])
+   [:user/id        string?]
+   [:user/name      [:string {:gen/gen (gen/elements german-names)}]]
+   [:user/role      [:enum :member :kitchen :admin]]
+   [:user/pin-hash  [:string {:gen/gen (gen/return "$2b$10$fSviXQEHvZ/dHtwvKUREbOFZcc9Recla6YM4vFMmgbLb9hyNLpij.")}]]
+   [:user/rfid-hash {:optional true} string?]
+   [:user/status    [:enum :active :inactive :suspended]]
+   [:user/history   {:gen/gen (gen/return [])} UserHistory]])
 
 (defn generate-users [n]
   (into {}
@@ -161,7 +162,8 @@
    [:user/name       string?]
    [:user/role       [:enum :member :kitchen :admin]]
    [:user/status     [:enum :active :inactive :suspended]]
-   [:user/pin-hash   {:optional true} string?]])
+   [:user/pin-hash   {:optional true} string?]
+   [:user/rfid-hash  {:optional true} string?]])
 
 (def TopUpRequestedEvent
   [:map
@@ -243,7 +245,10 @@
    [:top-up-editing? {:optional true} [:maybe boolean?]]
    ;; general (lazily set, not in default-ui)
    [:error        {:optional true} [:maybe [:map [:type keyword?] [:message string?]]]]
-   [:activity-log {:optional true} [:maybe [:sequential map?]]]])
+   [:activity-log {:optional true} [:maybe [:sequential map?]]]
+   ;; rfid (lazily set, not in default-ui)
+   [:pending-rfid {:optional true} [:maybe string?]]
+   [:rfid-toast   {:optional true} [:maybe [:map [:message string?] [:type keyword?]]]]])
 
 (def AppDb
   [:map

@@ -20,7 +20,8 @@
    [feuerwehr-strichliste.pages.history :refer [history-page]]
    [feuerwehr-strichliste.pages.activity :refer [activity-page]]
    [feuerwehr-strichliste.top-up.events]
-   [feuerwehr-strichliste.top-up.subs]))
+   [feuerwehr-strichliste.top-up.subs]
+   [feuerwehr-strichliste.auth.rfid-listener :as rfid-listener]))
 
 (defmulti panels identity)
 (defmethod panels :default [] [:div "No panel found for this route."])
@@ -75,6 +76,7 @@
   (dev-setup)
   (when ^boolean goog.DEBUG
     (re-frame/reg-global-interceptor db/check-schema-interceptor))
+  (rfid-listener/mount!)
   (storage/init!
    (fn [stored]
      (re-frame/dispatch-sync (if stored

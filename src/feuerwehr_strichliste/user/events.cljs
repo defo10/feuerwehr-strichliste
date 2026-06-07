@@ -74,6 +74,29 @@
                    :persist! {:events [event] :snapshot snapshot}})
                 {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
 
+(re-frame/reg-event-fx
+ ::user-link-rfid
+ (fn-traced [{:keys [db]} [_ rfid-string]]
+            (let [user-id (get-in db [:ui :current-user-id])
+                  current (get-in db [:snapshot :users user-id])
+                  {:keys [snapshot event]}
+                  (reducer/apply-event
+                   (:snapshot db)
+                   (fn [ev-id]
+                     {:event/type      :user/updated
+                      :event/id        ev-id
+                      :event/timestamp (.toISOString (js/Date.))
+                      :event/actor     user-id
+                      :user/id         user-id
+                      :user/name       (:user/name current)
+                      :user/role       (:user/role current)
+                      :user/status     (:user/status current)
+                      :user/rfid-hash  (.hashSync bcrypt rfid-string 10)}))]
+              {:db       (-> db
+                             (assoc :snapshot snapshot)
+                             (assoc-in [:ui :pending-rfid] nil))
+               :persist! {:events [event] :snapshot snapshot}})))
+
 ;; Legacy event kept for compatibility
 (re-frame/reg-event-fx
  :command/create-user

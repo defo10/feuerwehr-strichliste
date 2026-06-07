@@ -29,6 +29,11 @@
          (re-frame/dispatch [:error :errors/load-failed (.-message e)]))))))
 
 (re-frame/reg-fx
+ :dispatch-after
+ (fn [{:keys [ms dispatch]}]
+   (js/setTimeout #(re-frame/dispatch dispatch) ms)))
+
+(re-frame/reg-fx
  :persist-image!
  (fn [{:keys [item-id blob]}]
    (go
