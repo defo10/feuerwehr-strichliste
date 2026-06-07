@@ -225,6 +225,8 @@
     (r/create-class
      {:component-did-mount
       (fn [_] (re-frame/dispatch [::events/load-activity-log]))
+      :component-will-unmount
+      (fn [_] (re-frame/dispatch [:activity-log/loaded nil]))
       :reagent-render
       (fn []
         (let [log      @activity-log

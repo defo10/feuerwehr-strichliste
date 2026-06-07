@@ -212,6 +212,44 @@
    [:void/reason       {:optional true} string?]
    [:checkout/entries  [:sequential CheckoutEntry]]])
 
+(def Snapshot
+  [:map
+   [:users    [:map-of string? User]]
+   [:balances [:map-of string? number?]]
+   [:items    [:map-of string? Item]]])
+
+(def Ui
+  [:map
+   ;; auth
+   [:current-user-id [:maybe string?]]
+   [:pin [:map
+          [:user    [:maybe User]]
+          [:digits  string?]
+          [:error   [:maybe string?]]
+          [:success boolean?]]]
+   ;; user
+   [:search-query  string?]
+   [:editing-user  [:maybe User]]
+   [:profile-open? boolean?]
+   ;; item
+   [:cart         [:map-of string? nat-int?]]
+   [:active-tab   [:enum :drink :food]]
+   [:receipt      [:maybe map?]]
+   [:item-images  [:map-of string? string?]]
+   [:editing-item [:maybe Item]]
+   ;; top-up (lazily set, not in default-ui)
+   [:pending-top-up  {:optional true} [:maybe [:map [:user-id string?] [:amount pos-int?]]]]
+   [:top-up-editing? {:optional true} [:maybe boolean?]]
+   ;; general (lazily set, not in default-ui)
+   [:error        {:optional true} [:maybe [:map [:type keyword?] [:message string?]]]]
+   [:activity-log {:optional true} [:maybe [:sequential map?]]]])
+
+(def AppDb
+  [:map
+   [:snapshot     Snapshot]
+   [:ui           Ui]
+   [:active-panel {:optional true} keyword?]])
+
 (def DomainEvent
   [:multi {:dispatch :event/type}
    [:user/created              UserCreatedEvent]

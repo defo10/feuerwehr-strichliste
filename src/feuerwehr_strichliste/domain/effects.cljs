@@ -23,8 +23,8 @@
  (fn [_]
    (go
      (try
-       (let [log (<! (k/get-in @storage/store [:event-log]))]
-         (re-frame/dispatch [:activity-log/loaded (or log [])]))
+       (let [log (<! (k/reduce-log @storage/store :event-log conj []))]
+         (re-frame/dispatch [:activity-log/loaded log]))
        (catch :default e
          (re-frame/dispatch [:error :errors/load-failed (.-message e)]))))))
 
