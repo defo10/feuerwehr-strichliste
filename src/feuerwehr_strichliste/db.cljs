@@ -36,18 +36,19 @@
 
   (.reload js/location)
 
-  ;; 1. Create an admin user (bypasses permission checks)
-  (re-frame.core/dispatch-sync
-   [:command/create-user
-    {:name     "Admin"
-     :role     :admin
-     :pin-hash (user-events/hash-pin "1234")}])
+  (do
+    ;; 1. Create an admin user (bypasses permission checks) 
+    (re-frame.core/dispatch-sync
+     [:command/create-user
+      {:name     "Admin"
+       :role     :admin
+       :pin-hash (user-events/hash-pin "1234")}])
 
-  ;; 2. Sign in as that user via the real auth flow
-  (let [user (first (vals (get-in @rf-db/app-db [:snapshot :users])))]
-    (re-frame.core/dispatch-sync [:feuerwehr-strichliste.auth.events/open-pin-modal user]))
-  (doseq [d ["1" "2" "3" "4"]]
-    (re-frame.core/dispatch-sync [:feuerwehr-strichliste.auth.events/pin-digit d]))
+    ;; 2. Sign in as that user via the real auth flow
+    (let [user (first (vals (get-in @rf-db/app-db [:snapshot :users])))]
+      (re-frame.core/dispatch-sync [:feuerwehr-strichliste.auth.events/open-pin-modal user]))
+    (doseq [d ["1" "2" "3" "4"]]
+      (re-frame.core/dispatch-sync [:feuerwehr-strichliste.auth.events/pin-digit d])))
 
   ;; 3. Create more users
   (re-frame.core/dispatch-sync
