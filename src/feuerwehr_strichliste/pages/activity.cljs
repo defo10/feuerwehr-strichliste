@@ -53,8 +53,9 @@
     :type (name (:event/type event))
     :user (get-in users-map [(:event/actor event) :user/name] "")))
 
-(defn- apply-sort [events {:keys [col dir]} users-map]
-  (let [sorted (sort-by #(sort-value col % users-map) events)]
+(defn- apply-sort [sort-state users-map events]
+  (let [{:keys [col dir]} sort-state
+        sorted (sort-by #(sort-value col % users-map) events)]
     (if (= dir :desc) (reverse sorted) sorted)))
 
 (defn- toggle-sort [sort-state col]
