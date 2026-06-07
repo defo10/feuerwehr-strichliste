@@ -3,7 +3,10 @@
             [feuerwehr-strichliste.domain.reducer :as reducer]
             [feuerwehr-strichliste.auth.db :as auth-db]
             [feuerwehr-strichliste.user.db :as user-db]
-            [feuerwehr-strichliste.item.db :as item-db]))
+            [feuerwehr-strichliste.item.db :as item-db]
+            [malli.core :as m]
+            [malli.error :as me]
+            [re-frame.core :as re-frame]))
 
 (def ^:private seed-items
   [{:item/type :drink :item/name "Kaffee"     :item/price 150 :item/stock 50}
@@ -24,7 +27,7 @@
            :user/name       (:user/name user)
            :user/role       (:user/role user)
            :user/pin-hash   (:user/pin-hash user)})
-        (vals (schema/generate-users 5)))
+        (vals (schema/generate-users 10)))
    (map (fn [item]
           (merge {:event/type      :item/created
                   :event/timestamp "2026-04-18T00:00:00Z"
@@ -32,17 +35,26 @@
                  item))
         seed-items)))
 
+(def check-schema-interceptor
+  (re-frame/after
+   (fn [db]
+     (when ^boolean goog.DEBUG
+       (when-not (m/validate schema/AppDb db)
+         (throw (ex-info (str "db schema check failed: "
+                              (me/humanize (m/explain schema/AppDb db)))
+                         {})))))))
+
 (def ^:private default-ui
   (merge auth-db/default-ui user-db/default-ui item-db/default-ui))
 
 (def empty-db
-  {:snapshot  reducer/empty-snapshot
-   :ui        default-ui})
+  {:snapshot reducer/empty-snapshot
+   :ui       default-ui})
 
 (def default-db
   (let [snapshot (reduce (fn [snapshot seed-event]
                            (:snapshot (reducer/apply-event snapshot #(assoc seed-event :event/id %))))
                          reducer/empty-snapshot
-                (seed-events))]
-    {:snapshot  snapshot
-     :ui        default-ui}))
+                         (seed-events))]
+    {:snapshot snapshot
+     :ui       default-ui}))

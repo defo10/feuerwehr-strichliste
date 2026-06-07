@@ -4,6 +4,7 @@
    [re-frame.core :as re-frame]
    [bidi.bidi :as bidi]
    [pushy.core :as pushy]
+   [feuerwehr-strichliste.db :as db]
    [feuerwehr-strichliste.events :as events]
    [feuerwehr-strichliste.subs :as subs]
    [feuerwehr-strichliste.config :as config]
@@ -72,6 +73,8 @@
 (defn init []
   (pushy/start! history)
   (dev-setup)
+  (when ^boolean goog.DEBUG
+    (re-frame/reg-global-interceptor db/check-schema-interceptor))
   (storage/init!
    (fn [stored]
      (re-frame/dispatch-sync (if stored
