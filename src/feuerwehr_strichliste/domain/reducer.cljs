@@ -6,10 +6,10 @@
 (defn- append-history-entry! [history entry]
   (m/assert schema/UserHistory (conj history entry)))
 
-(defn- set-history-entry-status! [history entry-id status]
+(defn- update-history-entry! [history entry-id updates]
   (m/assert schema/UserHistory
             (mapv #(if (= entry-id (:history/id %))
-                     (assoc % :history/status status)
+                     (merge % updates)
                      %)
                   history)))
 
@@ -103,17 +103,23 @@
                     :top-up/amount     amount}))))
 
 (defmethod reduce-event :balance/top-up-confirmed
-  [snapshot {:keys [event/subject top-up/request-id]}]
+  [snapshot {:keys [event/subject event/actor event/timestamp top-up/request-id]}]
   (update-in snapshot [:users subject :user/history]
-             set-history-entry-status! request-id :confirmed))
+             update-history-entry! request-id
+             {:history/status   :confirmed
+              :top-up/confirmed-at timestamp
+              :top-up/confirmed-by actor}))
 
 (defmethod reduce-event :balance/top-up-cancelled
-  [snapshot {:keys [event/subject top-up/request-id top-up/amount] :as event}]
+  [snapshot {:keys [event/subject event/actor event/timestamp top-up/request-id top-up/amount] :as event}]
   (let [uid (or subject (:top-up/user-id event))]
     (-> snapshot
         (update-in [:balances uid] - amount)
         (update-in [:users uid :user/history]
-                   set-history-entry-status! request-id :cancelled))))
+                   update-history-entry! request-id
+                   {:history/status   :cancelled
+                    :top-up/cancelled-at timestamp
+                    :top-up/cancelled-by actor}))))
 
 (defmethod reduce-event :transaction/voided
   [snapshot {:keys [event/subject void/original-id checkout/entries]}]
@@ -124,7 +130,7 @@
               snapshot
               entries)
       (update-in [:users subject :user/history]
-                 set-history-entry-status! original-id :voided)))
+                 update-history-entry! original-id {:history/status :voided})))
 
 (defmethod reduce-event :auth/sign-in-attempted
   [snapshot _event]

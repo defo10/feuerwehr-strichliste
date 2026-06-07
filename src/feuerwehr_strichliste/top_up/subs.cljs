@@ -1,37 +1,30 @@
 (ns feuerwehr-strichliste.top-up.subs
   (:require [re-frame.core :as re-frame]
-            [feuerwehr-strichliste.subs :as app-subs]
+            [feuerwehr-strichliste.user.subs :as user-subs]
             [feuerwehr-strichliste.domain.permissions :as permissions]))
 
-; Scans the full event log on every change. An intermediate filtered-events sub would avoid
-; unnecessary re-runs, but this sub is only active on the top-ups page so the cost is acceptable.
 (re-frame/reg-sub
  ::top-ups-map
- :<- [::app-subs/event-log]
- (fn [event-log _]
-   (reduce (fn [m event]
-             (case (:event/type event)
-               :balance/top-up-requested
-               (assoc m (:event/id event)
-                      {:top-up/id           (:event/id event)
-                       :top-up/user-id      (or (:event/subject event) (:top-up/user-id event))
-                       :top-up/amount       (:top-up/amount event)
-                       :top-up/requested-at (:event/timestamp event)
-                       :top-up/requested-by (:event/actor event)
-                       :top-up/status       :pending})
-               :balance/top-up-confirmed
-               (update m (:top-up/request-id event) merge
-                       {:top-up/status       :confirmed
-                        :top-up/confirmed-at (:event/timestamp event)
-                        :top-up/confirmed-by (:event/actor event)})
-               :balance/top-up-cancelled
-               (update m (:top-up/request-id event) merge
-                       {:top-up/status       :cancelled
-                        :top-up/cancelled-at (:event/timestamp event)
-                        :top-up/cancelled-by (:event/actor event)})
-               m))
-           {}
-           event-log)))
+ :<- [::user-subs/users-map]
+ (fn [users-map _]
+   (into {}
+         (for [[uid user] users-map
+               entry      (:user/history user)
+               :when      (= :top-up (:history/type entry))]
+           [(:history/id entry)
+            {:top-up/id           (:history/id entry)
+             :top-up/user-id      uid
+             :top-up/amount       (:top-up/amount entry)
+             :top-up/requested-at (:history/timestamp entry)
+             :top-up/requested-by (:history/actor entry)
+             :top-up/status       (case (:history/status entry)
+                                    :active    :pending
+                                    :confirmed :confirmed
+                                    :cancelled :cancelled)
+             :top-up/confirmed-at (:top-up/confirmed-at entry)
+             :top-up/confirmed-by (:top-up/confirmed-by entry)
+             :top-up/cancelled-at (:top-up/cancelled-at entry)
+             :top-up/cancelled-by (:top-up/cancelled-by entry)}]))))
 
 (re-frame/reg-sub
  ::top-ups-sorted
