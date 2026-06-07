@@ -106,9 +106,9 @@
   [snapshot {:keys [event/subject event/actor event/timestamp top-up/request-id]}]
   (update-in snapshot [:users subject :user/history]
              update-history-entry! request-id
-             {:history/status   :confirmed
-              :top-up/confirmed-at timestamp
-              :top-up/confirmed-by actor}))
+             {:history/status  :confirmed
+              :top-up/reviewed-at timestamp
+              :top-up/reviewed-by actor}))
 
 (defmethod reduce-event :balance/top-up-cancelled
   [snapshot {:keys [event/subject event/actor event/timestamp top-up/request-id top-up/amount] :as event}]
@@ -117,9 +117,9 @@
         (update-in [:balances uid] - amount)
         (update-in [:users uid :user/history]
                    update-history-entry! request-id
-                   {:history/status   :cancelled
-                    :top-up/cancelled-at timestamp
-                    :top-up/cancelled-by actor}))))
+                   {:history/status  :cancelled
+                    :top-up/reviewed-at timestamp
+                    :top-up/reviewed-by actor}))))
 
 (defmethod reduce-event :transaction/voided
   [snapshot {:keys [event/subject void/original-id checkout/entries]}]

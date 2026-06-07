@@ -14,8 +14,7 @@
 
 (defn- status-cell [top-up users-map]
   (let [status       (:top-up/status top-up)
-        confirmed-by (get-in users-map [(:top-up/confirmed-by top-up) :user/name])
-        cancelled-by (get-in users-map [(:top-up/cancelled-by top-up) :user/name])]
+        reviewed-by (get-in users-map [(:top-up/reviewed-by top-up) :user/name])]
     (case status
       :pending
       [:td
@@ -35,13 +34,13 @@
        [:span.tag.is-success "Bestätigt"]
        [:br]
        [:span.is-size-7.has-text-grey
-        (str confirmed-by " · " (format-date (:top-up/confirmed-at top-up)))]]
+        (str reviewed-by " · " (format-date (:top-up/reviewed-at top-up)))]]
       :cancelled
       [:td
        [:span.tag "Storniert"]
        [:br]
        [:span.is-size-7.has-text-grey
-        (str cancelled-by " · " (format-date (:top-up/cancelled-at top-up)))]])))
+        (str reviewed-by " · " (format-date (:top-up/reviewed-at top-up)))]])))
 
 (defn- top-up-row [top-up users-map]
   (let [status    (:top-up/status top-up)

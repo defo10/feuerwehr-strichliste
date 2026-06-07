@@ -36,12 +36,14 @@
 
 (def TopUpHistoryEntry
   [:map
-   [:history/id        string?]
-   [:history/type      [:= :top-up]]
-   [:history/timestamp string?]
-   [:history/actor     string?]
-   [:history/status    [:enum :active :confirmed :cancelled]]
-   [:top-up/amount     pos-int?]])
+   [:history/id           string?]
+   [:history/type         [:= :top-up]]
+   [:history/timestamp    string?]
+   [:history/actor        string?]
+   [:history/status       [:enum :active :confirmed :cancelled]]
+   [:top-up/amount        pos-int?]
+   [:top-up/reviewed-at   {:optional true} string?]
+   [:top-up/reviewed-by   {:optional true} string?]])
 
 (def HistoryEntry
   [:or CheckoutHistoryEntry TopUpHistoryEntry])
@@ -196,10 +198,8 @@
    [:top-up/requested-at string?]
    [:top-up/requested-by string?]
    [:top-up/status       [:enum :pending :confirmed :cancelled]]
-   [:top-up/confirmed-at {:optional true} string?]
-   [:top-up/confirmed-by {:optional true} string?]
-   [:top-up/cancelled-at {:optional true} string?]
-   [:top-up/cancelled-by {:optional true} string?]])
+   [:top-up/reviewed-at  {:optional true} string?]
+   [:top-up/reviewed-by  {:optional true} string?]])
 
 (def TransactionVoidedEvent
   [:map
