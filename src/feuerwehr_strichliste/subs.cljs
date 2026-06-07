@@ -28,9 +28,9 @@
    (get-in db [:snapshot :balances])))
 
 (re-frame/reg-sub
- ::event-log
+ ::activity-log
  (fn [db _]
-   (get db :event-log)))
+   (get-in db [:ui :activity-log])))
 
 (re-frame/reg-sub
  ::user-events-for

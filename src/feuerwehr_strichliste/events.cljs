@@ -7,42 +7,45 @@
 (re-frame/reg-event-db
  ::initialize-db
  (fn-traced [_ _]
-   db/default-db))
+            db/default-db))
 
 (re-frame/reg-event-db
  ::initialize-empty-db
  (fn-traced [_ _]
-   db/empty-db))
-
-(defn- migrate-event [event]
-  (if-let [uid (:top-up/user-id event)]
-    (-> event (assoc :event/subject uid) (dissoc :top-up/user-id))
-    event))
+            db/empty-db))
 
 (re-frame/reg-event-db
  ::initialize-from-storage
- (fn-traced [_ [_ {:keys [snapshot event-log]}]]
-   (assoc db/empty-db
-          :snapshot  snapshot
-          :event-log (mapv migrate-event event-log))))
+ (fn-traced [_ [_ {:keys [snapshot]}]]
+            (assoc db/empty-db :snapshot snapshot)))
+
+(re-frame/reg-event-fx
+ ::load-activity-log
+ (fn-traced [_ _]
+            {:load-activity-log! nil}))
+
+(re-frame/reg-event-db
+ :activity-log/loaded
+ (fn-traced [db [_ event-log]]
+            (assoc-in db [:ui :activity-log] event-log)))
 
 (re-frame/reg-event-fx
  ::navigate
  (fn-traced [_ [_ handler]]
-   {:navigate handler}))
+            {:navigate handler}))
 
 (re-frame/reg-event-fx
  ::set-active-panel
  (fn-traced [{:keys [db]} [_ active-panel]]
-   {:db (assoc db :active-panel active-panel)}))
+            {:db (assoc db :active-panel active-panel)}))
 
 (re-frame/reg-event-db
  :error
  (fn-traced [db [_ type message]]
-   (assoc-in db [:ui :error] {:type type :message message})))
+            (assoc-in db [:ui :error] {:type type :message message})))
 
 (re-frame/reg-event-db
  :error/dismiss
  (fn-traced [db _]
-   (assoc-in db [:ui :error] nil)))
+            (assoc-in db [:ui :error] nil)))
 

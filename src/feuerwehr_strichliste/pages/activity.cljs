@@ -13,6 +13,21 @@
                    #js {:day "2-digit" :month "2-digit" :year "2-digit"
                         :hour "2-digit" :minute "2-digit"}))
 
+(defn- local-date-str
+  "Returns a YYYY-MM-DD string in local time for the given Date object."
+  [^js d]
+  (str (.getFullYear d) "-"
+       (-> (.getMonth d) inc (.toString) (.padStart 2 "0")) "-"
+       (-> (.getDate d) (.toString) (.padStart 2 "0"))))
+
+(defn- default-date-from []
+  (let [d (js/Date.)]
+    (.setFullYear d (- (.getFullYear d) 1))
+    (local-date-str d)))
+
+(defn- default-date-to []
+  (local-date-str (js/Date.)))
+
 (def ^:private event-type-options
   [[:cart/checked-out         "Einkauf"]
    [:balance/top-up-requested "Einzahlung beantragt"]
@@ -52,7 +67,7 @@
     [:button.col-header {:on-click #(toggle-sort sort-state col)}
      label (when active? (if (= d :asc) " ▲" " ▼"))]))
 
-(defn- details-cell [event users-map items-map event-log]
+(defn- details-cell [event users-map items-map log]
   (case (:event/type event)
     :cart/checked-out
     (let [entries (:checkout/entries event)
@@ -74,7 +89,7 @@
      (str " für " (get-in users-map [(:event/subject event) :user/name] "?"))]
 
     :balance/top-up-confirmed
-    (let [req (first (filter #(= (:event/id %) (:top-up/request-id event)) event-log))]
+    (let [req (first (filter #(= (:event/id %) (:top-up/request-id event)) log))]
       [:td.is-size-7.has-text-grey
        (when req
          [:<>
@@ -104,7 +119,7 @@
 
     [:td]))
 
-(defn- event-row [event users-map items-map event-log]
+(defn- event-row [event users-map items-map log]
   (let [actor-id   (:event/actor event)
         subject-id (:event/subject event)
         actor-name (get-in users-map [actor-id :user/name] "?")
@@ -116,7 +131,7 @@
      [:td.is-size-7.has-text-grey (format-date (:event/timestamp event))]
      [:td (event-type-label (:event/type event))]
      [:td nutzer]
-     [details-cell event users-map items-map event-log]]))
+     [details-cell event users-map items-map log]]))
 
 (defn- filter-bar [type-filter user-filter date-from date-to users-map]
   (let [type-open? (r/atom false)
@@ -138,13 +153,15 @@
             [:span.icon.is-small [:i.fas.fa-angle-down]]]]
           [:div.dropdown-menu {:style {:min-width "14rem"}}
            [:div.dropdown-content
-            (for [[k label] event-type-options]
-              ^{:key k}
-              [:label.dropdown-item {:style {:display "flex" :gap "0.5rem" :cursor "pointer"}}
-               [:input {:type      "checkbox"
-                        :checked   (contains? @type-filter k)
-                        :on-change #(swap! type-filter (if (contains? @type-filter k) disj conj) k)}]
-               label])]]]
+            (let [tf @type-filter]
+              (doall
+               (for [[k label] event-type-options]
+                 ^{:key k}
+                 [:label.dropdown-item {:style {:display "flex" :gap "0.5rem" :cursor "pointer"}}
+                  [:input {:type      "checkbox"
+                           :checked   (contains? tf k)
+                           :on-change #(swap! type-filter (if (contains? @type-filter k) disj conj) k)}]
+                  label])))]]]
          [:div.select.is-small
           [:select {:value     (or @user-filter "")
                     :on-change #(reset! user-filter (let [v (.. % -target -value)]
@@ -164,10 +181,14 @@
            :value     (or @date-to "")
            :on-change #(reset! date-to (let [v (.. % -target -value)]
                                          (when (seq v) v)))}]
-         (when (or (seq @type-filter) @user-filter @date-from @date-to)
+         (when (or (seq @type-filter) @user-filter
+                   (not= @date-from (default-date-from))
+                   (not= @date-to (default-date-to)))
            [:button.button.is-small.is-ghost
-            {:on-click #(do (reset! type-filter #{}) (reset! user-filter nil)
-                            (reset! date-from nil) (reset! date-to nil))}
+            {:on-click #(do (reset! type-filter #{})
+                            (reset! user-filter nil)
+                            (reset! date-from (default-date-from))
+                            (reset! date-to (default-date-to)))}
             "Zurücksetzen"])])})))
 
 (defn- log-table [events sort-state um im log]
@@ -192,42 +213,55 @@
           [event-row event um im log])]]]]))
 
 (defn activity-page []
-  (let [event-log   (re-frame/subscribe [::app-subs/event-log])
-        users-map   (re-frame/subscribe [::user-subs/users-map])
-        items-map   (re-frame/subscribe [::item-subs/items-map])
-        sort-state  (r/atom {:col :time :dir :desc})
-        type-filter (r/atom #{})
-        user-filter (r/atom nil)
-        date-from   (r/atom nil)
-        date-to     (r/atom nil)]
-    (fn []
-      (let [log      @event-log
-            um       @users-map
-            im       @items-map
-            filtered (->> log
-                          (filter (fn [e]
-                                    (or (empty? @type-filter)
-                                        (contains? @type-filter (:event/type e)))))
-                          (filter (fn [e]
-                                    (or (nil? @user-filter)
-                                        (= @user-filter (:event/actor e))
-                                        (= @user-filter (:event/subject e)))))
-                          (filter (fn [e]
-                                    (let [t (.getTime (js/Date. (:event/timestamp e)))]
-                                      (and (or (nil? @date-from)
-                                               (>= t (.getTime (js/Date. @date-from))))
-                                           (or (nil? @date-to)
-                                               (<= t (+ (.getTime (js/Date. @date-to)) 86399999))))))))
-            events   (apply-sort filtered @sort-state um)]
-        [:div
-         [:nav.top-nav
-          [:button.button.is-ghost
-           {:on-click #(re-frame/dispatch [::events/navigate :overview])}
-           [:span.icon [:i.fas.fa-arrow-left]]
-           [:span "Zurück"]]
-          [:span.top-nav-name "Aktivitätslog"]
-          [:span]]
+  (let [activity-log (re-frame/subscribe [::app-subs/activity-log])
+        users-map    (re-frame/subscribe [::user-subs/users-map])
+        items-map    (re-frame/subscribe [::item-subs/items-map])
+        sort-state   (r/atom {:col :time :dir :desc})
+        type-filter  (r/atom #{})
+        user-filter  (r/atom nil)
+        date-from    (r/atom (default-date-from))
+        date-to      (r/atom (default-date-to))]
+    (r/create-class
+     {:component-did-mount
+      (fn [_] (re-frame/dispatch [::events/load-activity-log]))
+      :reagent-render
+      (fn []
+        (let [log      @activity-log
+              um       @users-map
+              im       @items-map
+              tf       @type-filter
+              uf       @user-filter
+              df       @date-from
+              dt       @date-to
+              ss       @sort-state
+              filtered (when log
+                         (->> log
+                              (filter (fn [e]
+                                        (or (empty? tf)
+                                            (contains? tf (:event/type e)))))
+                              (filter (fn [e]
+                                        (or (nil? uf)
+                                            (= uf (:event/actor e))
+                                            (= uf (:event/subject e)))))
+                              (filter (fn [e]
+                                        (let [t (.getTime (js/Date. (:event/timestamp e)))]
+                                          (and (or (nil? df)
+                                                   (>= t (.getTime (js/Date. df))))
+                                               (or (nil? dt)
+                                                   (<= t (+ (.getTime (js/Date. dt)) 86399999)))))))
+                              (apply-sort ss um)
+                              vec))]
+          [:div
+           [:nav.top-nav
+            [:button.button.is-ghost
+             {:on-click #(re-frame/dispatch [::events/navigate :overview])}
+             [:span.icon [:i.fas.fa-arrow-left]]
+             [:span "Zurück"]]
+            [:span.top-nav-name "Aktivitätslog"]
+            [:span]]
 
-         [:div {:style {:padding "1.5rem"}}
-          [filter-bar type-filter user-filter date-from date-to um]
-          [log-table events sort-state um im log]]]))))
+           [:div {:style {:padding "1.5rem"}}
+            [filter-bar type-filter user-filter date-from date-to um]
+            (if (nil? log)
+              [:p.has-text-grey "Laden…"]
+              [log-table filtered sort-state um im log])]]))})))

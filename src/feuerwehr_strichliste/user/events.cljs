@@ -44,7 +44,7 @@
                           :user/name       name
                           :user/role       role
                           :user/pin-hash   (.hashSync bcrypt pin 10)}))]
-                  {:db       (assoc db :snapshot snapshot :event-log (conj (:event-log db) event))
+                  {:db       (assoc db :snapshot snapshot)
                    :persist! {:events [event] :snapshot snapshot}})
                 {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
 
@@ -70,7 +70,7 @@
                                   :user/status     (or status (:user/status current))}
                            (not (str/blank? pin))
                            (assoc :user/pin-hash (.hashSync bcrypt pin 10)))))]
-                  {:db       (assoc db :snapshot snapshot :event-log (conj (:event-log db) event))
+                  {:db       (assoc db :snapshot snapshot)
                    :persist! {:events [event] :snapshot snapshot}})
                 {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
 
@@ -88,5 +88,5 @@
                                                :user/name       name
                                                :user/role       role
                                                :user/pin-hash   pin-hash}))]
-              {:db       (assoc db :snapshot snapshot :event-log (conj (:event-log db) event))
+              {:db       (assoc db :snapshot snapshot)
                :persist! {:events [event] :snapshot snapshot}})))

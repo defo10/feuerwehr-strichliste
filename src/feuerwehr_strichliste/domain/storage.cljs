@@ -16,17 +16,14 @@
 (defonce store (atom nil))
 
 (defn init!
-  "Initializes the store and calls on-ready with persisted data when available.
+  "Initializes the store and calls on-ready with persisted snapshot or nil.
    In dev mode, on-ready receives nil (use seed data).
-   In prod, on-ready receives {:snapshot ... :event-log ...} if data exists, else nil."
+   In prod, on-ready receives {:snapshot ...} if data exists, else nil."
   [on-ready]
   (if config/debug?
     (do (reset! store (k/create-store mem-config {:sync? true}))
         (on-ready nil))
     (go
       (reset! store (<! (k/create-store idb-config {:sync? false})))
-      (let [snapshot  (<! (k/get-in @store [:snapshot]))
-            event-log (<! (k/get-in @store [:event-log]))]
-        (on-ready (when snapshot
-                    {:snapshot  snapshot
-                     :event-log (or event-log [])}))))))
+      (let [snapshot (<! (k/get-in @store [:snapshot]))]
+        (on-ready (when snapshot {:snapshot snapshot}))))))

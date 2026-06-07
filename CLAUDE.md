@@ -170,6 +170,30 @@ This separates the app-db into two regions:
 
 ---
 
+### Reagent: No reactive derefs inside lazy seqs
+
+Never deref a ratom or re-frame subscription inside a lazy sequence (`for`, `map`, `filter`, `->>` chains). Reagent tracks reactive deps during the render call; lazy evaluation happens later, outside that context, so the deref is silently untracked and triggers a console warning.
+
+**Wrong:**
+```clojure
+(for [x items] [:div {:class (when @selected? "active")} x])
+
+(->> events (filter #(contains? @type-filter (:type %))) ...)
+```
+
+**Right — deref before the lazy form:**
+```clojure
+(let [sel? @selected?]
+  (for [x items] [:div {:class (when sel? "active")} x]))
+
+(let [tf @type-filter]
+  (->> events (filter #(contains? tf (:type %))) ...))
+```
+
+`doall` alone does **not** fix this — the deref must happen outside the lazy seq constructor, not just be forced later. Also add `vec` or `doall` at the end of filter chains before passing results to child components, so the lazy seq is fully realized within the current render context.
+
+---
+
 ### Subscriptions
 
 Subscriptions are layered. Never do computation in an extractor.

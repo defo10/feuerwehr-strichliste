@@ -19,6 +19,16 @@
            (js/setTimeout #(throw e) 0)))))))
 
 (re-frame/reg-fx
+ :load-activity-log!
+ (fn [_]
+   (go
+     (try
+       (let [log (<! (k/get-in @storage/store [:event-log]))]
+         (re-frame/dispatch [:activity-log/loaded (or log [])]))
+       (catch :default e
+         (re-frame/dispatch [:error :errors/load-failed (.-message e)]))))))
+
+(re-frame/reg-fx
  :persist-image!
  (fn [{:keys [item-id blob]}]
    (go

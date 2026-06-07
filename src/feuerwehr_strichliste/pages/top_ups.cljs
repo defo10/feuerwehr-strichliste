@@ -21,10 +21,14 @@
       [:td
        [:div.buttons.are-small
         [:button.button.is-success.is-small
-         {:on-click #(re-frame/dispatch [::top-up-events/confirm-top-up (:top-up/id top-up)])}
+         {:on-click #(re-frame/dispatch [::top-up-events/confirm-top-up
+                                         {:request-id (:top-up/id top-up)
+                                          :user-id    (:top-up/user-id top-up)}])}
          "Bestätigen"]
         [:button.button.is-light.is-small
-         {:on-click #(re-frame/dispatch [::top-up-events/cancel-top-up (:top-up/id top-up)])}
+         {:on-click #(re-frame/dispatch [::top-up-events/cancel-top-up
+                                         {:request-id (:top-up/id top-up)
+                                          :user-id    (:top-up/user-id top-up)}])}
          "Stornieren"]]]
       :confirmed
       [:td

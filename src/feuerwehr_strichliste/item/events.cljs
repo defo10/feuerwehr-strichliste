@@ -98,7 +98,7 @@
 
                       events (filterv some? [edit-event correction-event])]
                   (if (seq events)
-                    (let [base (-> db (assoc :snapshot snapshot2) (update :event-log into events))
+                    (let [base (assoc db :snapshot snapshot2)
                           db'  (if image
                                  ; revoke the old URL before replacing it — object URLs hold the blob
                                  ; in memory until explicitly revoked or the page unloads
@@ -181,7 +181,6 @@
               (if (seq events)
                 {:db       (-> db
                                (assoc :snapshot snap2)
-                               (update :event-log into events)
                                (assoc-in [:ui :cart] {})
                                (assoc-in [:ui :pending-top-up] nil))
                  :persist! {:events events :snapshot snap2}}
@@ -194,7 +193,12 @@
  (fn-traced [{:keys [db]} [_ original-event-id]]
             (let [actor-id (get-in db [:ui :current-user-id])
                   role     (get-in db [:snapshot :users actor-id :user/role])
-                  original (first (filter #(= original-event-id (:event/id %)) (:event-log db)))]
+                  original (first (for [[uid user] (get-in db [:snapshot :users])
+                                        entry      (:user/history user)
+                                        :when      (and (= :checkout (:history/type entry))
+                                                        (= original-event-id (:history/id entry)))]
+                                    {:uid             uid
+                                     :checkout/entries (:checkout/entries entry)}))]
               (if-not (permissions/can? role :void-transaction)
                 {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}
                 (if-not original
@@ -207,10 +211,10 @@
                             :event/id         id
                             :event/timestamp  (.toISOString (js/Date.))
                             :event/actor      actor-id
-                            :event/subject    (or (:event/subject original) (:event/actor original))
+                            :event/subject    (:uid original)
                             :void/original-id original-event-id
                             :checkout/entries (:checkout/entries original)}))]
-                    {:db       (-> db (assoc :snapshot snapshot) (update :event-log conj event))
+                    {:db       (assoc db :snapshot snapshot)
                      :persist! {:events [event] :snapshot snapshot}}))))))
 
 (re-frame/reg-event-fx
@@ -232,7 +236,7 @@
                             :event/actor      actor-id
                             :event/subject    user-id
                             :checkout/entries entries}))]
-                    {:db       (-> db (assoc :snapshot snapshot) (update :event-log conj event))
+                    {:db       (assoc db :snapshot snapshot)
                      :persist! {:events [event] :snapshot snapshot}}))))))
 
 (re-frame/reg-event-fx
@@ -254,7 +258,7 @@
                                                           :item/stock      stock}
                                                          (when image {:item/image-key id}))))
                       item-id (:event/id event)
-                      db'     (cond-> (-> db (assoc :snapshot snapshot) (update :event-log conj event))
+                      db'     (cond-> (assoc db :snapshot snapshot)
                                 image (assoc-in [:ui :item-images item-id]
                                                 (js/URL.createObjectURL image)))]
                   (merge {:db       db'
