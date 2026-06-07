@@ -33,15 +33,33 @@
     (neg? cents) "var(--color-on-surface)"
     :else        "var(--color-on-surface-muted)"))
 
+(defn- top-up-cancelled? [top-up]
+  (= :cancelled (:history/status top-up)))
+
+(defn- top-up-row [top-up]
+  (let [cancelled? (top-up-cancelled? top-up)
+        reviewer   (:top-up/reviewed-by-name top-up)]
+    [:tr {:style {:border-top "1px solid var(--color-outline)"
+                  :color      (if cancelled? "var(--color-on-surface-muted)" "#22863a")}}
+     [:td {:colSpan 3 :style {:padding "0.3rem 0"}}
+      [:span {:style (when cancelled? {:text-decoration "line-through"})} "Einzahlung"]
+      (when cancelled?
+        [:span {:style {:margin-left "0.5rem" :font-size "0.75rem"}}
+         (str "storniert" (when reviewer (str " von " reviewer)))])]
+     [:td {:style {:text-align "right" :padding "0.3rem 0 0.3rem 1rem"
+                   :text-decoration (when cancelled? "line-through")}}
+      (str "+ " (format-price (:top-up/amount top-up)))]]))
+
 (defn- session-card [events items-map]
-  (let [checkout  (some #(when (= :checkout (:history/type %)) %) events)
-        top-up    (some #(when (= :top-up (:history/type %)) %) events)
-        ts        (:history/timestamp (first events))
-        entries   (:checkout/entries checkout)
+  (let [checkout    (some #(when (= :checkout (:history/type %)) %) events)
+        top-up      (some #(when (= :top-up (:history/type %)) %) events)
+        ts          (:history/timestamp (first events))
+        entries     (:checkout/entries checkout)
         order-total (reduce (fn [s {:keys [quantity unit-price]}]
                               (+ s (* quantity unit-price)))
                             0 entries)
-        net       (- (or (:top-up/amount top-up) 0) order-total)]
+        top-up-net  (if (top-up-cancelled? top-up) 0 (or (:top-up/amount top-up) 0))
+        net         (- top-up-net order-total)]
     [:div {:style {:background    "var(--color-surface)"
                    :border        "1px solid var(--color-outline)"
                    :border-radius "var(--radius)"
@@ -75,16 +93,18 @@
             [:td {:style {:text-align "right" :padding "0.2rem 0 0.2rem 1rem"}} (format-price unit-price)]
             [:td {:style {:text-align "right" :padding "0.2rem 0 0.2rem 1rem"}}
              (format-price (* quantity unit-price))]])
-         (when top-up
-           [:tr {:style {:border-top "1px solid var(--color-outline)"
-                         :color      "#22863a"}}
-            [:td {:colSpan 3 :style {:padding "0.3rem 0"}} "Einzahlung"]
-            [:td {:style {:text-align "right" :padding "0.3rem 0 0.3rem 1rem"}}
-             (str "+ " (format-price (:top-up/amount top-up)))]])]]
-       [:div {:style {:display "flex" :justify-content "space-between" :font-size "0.875rem"}}
-        [:span "Einzahlung"]
-        [:strong {:style {:color "#22863a"}}
-         (str "+ " (format-price (:top-up/amount top-up)))]])]))
+         (when top-up [top-up-row top-up])]]
+       (let [cancelled? (top-up-cancelled? top-up)
+             reviewer   (:top-up/reviewed-by-name top-up)]
+         [:div {:style {:display "flex" :justify-content "space-between" :font-size "0.875rem"}}
+          [:span
+           [:span {:style (when cancelled? {:text-decoration "line-through"})} "Einzahlung"]
+           (when cancelled?
+             [:span {:style {:margin-left "0.5rem" :font-size "0.75rem" :color "var(--color-on-surface-muted)"}}
+              (str "storniert" (when reviewer (str " von " reviewer)))])]
+          [:strong {:style {:color (if cancelled? "var(--color-on-surface-muted)" "#22863a")
+                            :text-decoration (when cancelled? "line-through")}}
+           (str "+ " (format-price (:top-up/amount top-up)))]]))]))
 
 (defn history-page []
   (let [history   (re-frame/subscribe [::app-subs/user-history])

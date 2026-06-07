@@ -42,8 +42,9 @@
    [:history/actor        string?]
    [:history/status       [:enum :active :confirmed :cancelled]]
    [:top-up/amount        pos-int?]
-   [:top-up/reviewed-at   {:optional true} string?]
-   [:top-up/reviewed-by   {:optional true} string?]])
+   [:top-up/reviewed-at        {:optional true} string?]
+   [:top-up/reviewed-by        {:optional true} string?]
+   [:top-up/reviewed-by-name   {:optional true} string?]])
 
 (def HistoryEntry
   [:or CheckoutHistoryEntry TopUpHistoryEntry])
