@@ -150,7 +150,7 @@
                          [:button.button.is-danger.is-outlined.is-small
                           {:on-click #(if (= :checkout (:history/type event))
                                         (re-frame/dispatch [::item-events/void-checkout (:history/id event)])
-                                        (re-frame/dispatch [::top-up-events/cancel-top-up (:history/id event)]))}
+                                        (re-frame/dispatch [::top-up-events/cancel-top-up {:request-id (:history/id event) :user-id (:user/id user)}]))}
                           "Stornieren"]
 
                          (#{:voided :cancelled} status)
