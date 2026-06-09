@@ -155,6 +155,7 @@
 
    [:.drawer-body
     {:flex       1
+     :min-height 0
      :overflow-y "auto"}]
 
    [:.drawer-form
@@ -547,6 +548,7 @@
 
    [:.session-pane-entries
     {:flex       1
+     :min-height 0
      :overflow-y "auto"
      :padding    "0.75rem 1rem"}]
 
