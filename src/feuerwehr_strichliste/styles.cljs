@@ -118,7 +118,7 @@
     {:position       "fixed"
      :top            0
      :right          0
-     :height         "100vh"
+     :height         "100dvh"
      :width          (px 420)
      :max-width      "90vw"
      :background     "var(--color-surface)"
@@ -492,7 +492,7 @@
 
    [:.overview-layout
     {:display  "flex"
-     :height   "100vh"
+     :height   "100dvh"
      :overflow "hidden"}]
 
    [:.main-content
@@ -507,7 +507,7 @@
      :flex-direction "column"
      :background     "var(--color-surface)"
      :border-left    "1px solid var(--color-outline)"
-     :height         "100vh"
+     :height         "100dvh"
      :overflow       "hidden"}]
 
    [:.session-pane-balance
