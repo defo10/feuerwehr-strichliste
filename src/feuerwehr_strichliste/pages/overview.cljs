@@ -35,9 +35,15 @@
       [:span.session-pane-balance-amount {:class (balance-class projected)}
        (format-balance projected)]
       (if top-up-editing?
-        [top-up-form {:current-user   user
-                      :initial-amount (:amount pending-top-up)
-                      :on-close       #(re-frame/dispatch [::top-up-events/close-top-up-form])}]
+        [:<>
+         [top-up-form {:current-user   user
+                       :initial-amount (:amount pending-top-up)
+                       :on-close       #(re-frame/dispatch [::top-up-events/close-top-up-form])}]
+         [:p.top-up-info
+          "Bitte den Betrag zeitnah auf folgendes Konto überweisen:" [:br]
+          "DExxx xxxx xxxx xxxx xxxx" [:br]
+          "oder per paypal an:" [:br]
+          "sandro@test.com"]]
         [:button.button.is-light.is-fullwidth
          {:on-click #(re-frame/dispatch [::top-up-events/open-top-up-form])}
          [:span.icon.is-small [:i.fas.fa-coins]]

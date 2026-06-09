@@ -529,6 +529,11 @@
      :flex-direction "column"
      :gap            "1rem"}]
 
+   [:.top-up-info
+    {:font-size   (rem 0.75)
+     :color       "var(--color-on-surface-muted)"
+     :line-height 1.6}]
+
    [:.session-pane-balance-label
     {:font-size      (rem 0.75)
      :font-weight    600
