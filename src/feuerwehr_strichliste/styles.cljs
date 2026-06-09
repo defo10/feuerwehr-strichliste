@@ -176,8 +176,18 @@
      :font-size   (rem 0.8)}]
 
    [:.optional-input
-    {:border-style "dashed !important"
-     :color        "var(--color-on-surface-muted)"}]
+    {:color "var(--color-on-surface-muted)"}
+    ["&::file-selector-button"
+     {:padding         "0.4em 0.75em"
+      :border          "1px solid var(--color-outline)"
+      :border-radius   "var(--radius)"
+      :background      "var(--color-surface)"
+      :color           "var(--color-on-surface)"
+      :font-size       (rem 0.875)
+      :cursor          "pointer"
+      :margin-right    "0.5em"}]
+    ["&:hover::file-selector-button"
+     {:background "var(--color-outline)"}]]
 
    [:.image-preview
     {:display       "block"
@@ -215,7 +225,8 @@
      :align-items   "stretch"
      :border        "1px solid var(--color-outline)"
      :border-radius "var(--radius)"
-     :overflow      "hidden"}]
+     :overflow      "hidden"}
+    ["&:focus-within" {:border-color "var(--color-primary)"}]]
 
    [:.price-currency
     {:padding     "0.625rem 0.75rem"
