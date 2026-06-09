@@ -12,6 +12,46 @@
                    #js {:day "2-digit" :month "2-digit" :year "2-digit"
                         :hour "2-digit" :minute "2-digit"}))
 
+(defn- export-pdf! [top-ups users-map]
+  (let [confirmed (filter #(= :confirmed (:top-up/status %)) top-ups)
+        today     (.toLocaleDateString (js/Date.) "de-DE")
+        rows      (apply str
+                         (map (fn [t]
+                                (str "<tr>"
+                                     "<td>" (format-date (:top-up/requested-at t)) "</td>"
+                                     "<td>" (get-in users-map [(:top-up/user-id t) :user/name] "?") "</td>"
+                                     "<td>Einzahlung</td>"
+                                     "<td>" (format-price (:top-up/amount t)) "</td>"
+                                     "<td>" (get-in users-map [(:top-up/reviewed-by t) :user/name] "?") "</td>"
+                                     "<td></td>"
+                                     "</tr>"))
+                              confirmed))
+        html      (str "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+                       "<style>"
+                       "body{font-family:sans-serif;font-size:13px;padding:2rem}"
+                       "h2{margin-bottom:0.25rem}"
+                       "p{margin-bottom:1rem;color:#666;font-size:12px}"
+                       "table{width:100%;border-collapse:collapse}"
+                       "th,td{border:1px solid #ccc;padding:0.4rem 0.6rem;text-align:left}"
+                       "th{background:#f5f5f5;font-weight:600}"
+                       "td:last-child{width:8rem}"
+                       "</style></head><body>"
+                       "<h2>Einzahlungen</h2>"
+                       "<p>Exportiert am " today "</p>"
+                       "<table><thead><tr>"
+                       "<th>Datum</th><th>Empfänger</th><th>Umsatzart</th>"
+                       "<th>Höhe</th><th>Bestätigt von</th><th>Unterschrift</th>"
+                       "</tr></thead><tbody>" rows "</tbody></table>"
+                       "</body></html>")
+        iframe    (.createElement js/document "iframe")]
+    (set! (.. iframe -style -display) "none")
+    (.appendChild js/document.body iframe)
+    (.write (.. iframe -contentWindow -document) html)
+    (.close (.. iframe -contentWindow -document))
+    (.addEventListener (.-contentWindow iframe) "afterprint"
+                       (fn [] (.remove iframe)))
+    (.print (.-contentWindow iframe))))
+
 (defn- status-cell [top-up users-map]
   (let [status       (:top-up/status top-up)
         reviewed-by (get-in users-map [(:top-up/reviewed-by top-up) :user/name])]
@@ -64,7 +104,11 @@
            [:span.icon [:i.fas.fa-arrow-left]]
            [:span "Zurück"]]
           [:span.top-nav-name "Einzahlungen"]
-          [:span]]
+          [:button.button.is-light.is-small
+           {:on-click #(export-pdf! top-ups users-map)
+            :disabled (not (some #(= :confirmed (:top-up/status %)) top-ups))}
+           [:span.icon.is-small [:i.fas.fa-file-export]]
+           [:span "Exportieren"]]]
 
          [:div {:style {:padding "1.5rem"}}
           (if (empty? top-ups)
