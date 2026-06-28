@@ -40,10 +40,11 @@
    [:* {:box-sizing "border-box" :margin 0 :padding 0}]
 
    [:body
-    {:font-family "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
-     :background  "var(--color-background)"
-     :color       "var(--color-on-surface)"
-     :min-height  "100vh"}]
+    {:font-family        "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
+     :background         "var(--color-background)"
+     :color              "var(--color-on-surface)"
+     :min-height         "100vh"
+     :overscroll-behavior-y "none"}]
 
    [:.button.is-ghost
     ["&:hover" {:text-decoration "none"}]]
