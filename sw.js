@@ -1,4 +1,4 @@
-const CACHE = 'strichliste-5e43ec5';
+const CACHE = 'strichliste-a9e5fa3';
 
 const PRECACHE = ['/', '/index.html', '/js/compiled/app.js', '/icon.svg'];
 
