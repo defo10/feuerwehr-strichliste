@@ -62,6 +62,16 @@
    (group-by :item/type items)))
 
 (re-frame/reg-sub
+ ::inactive-items-by-type
+ :<- [::items-map]
+ (fn [items-map _]
+   (->> items-map
+        vals
+        (filter #(= :inactive (:item/status %)))
+        (sort-by :item/name)
+        (group-by :item/type))))
+
+(re-frame/reg-sub
  ::cart-entries
  :<- [::cart]
  :<- [::items-map]

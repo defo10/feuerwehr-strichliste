@@ -415,9 +415,33 @@
      :flex-direction "column"
      :gap            "0.5rem"
      :transition     "border-color 0.15s, background 0.15s"}
-    ["&.item-card--selected" {:border-color "var(--color-primary)"
-                              :background   "#fff5f5"}]
-    ["&.item-card--empty"    {:opacity "0.45"}]]
+    ["&.item-card--selected"  {:border-color "var(--color-primary)"
+                               :background   "#fff5f5"}]
+    ["&.item-card--empty"     {:opacity "0.45"}]
+    ["&.item-card--inactive"  {:opacity      "0.6"
+                               :border-style "dashed"}]]
+
+   [:.item-card-badge
+    {:display         "inline-block"
+     :align-self      "flex-start"
+     :font-size       (rem 0.7)
+     :font-weight     700
+     :text-transform  "uppercase"
+     :letter-spacing  "0.05em"
+     :padding         "0.15rem 0.4rem"
+     :border-radius   "4px"
+     :background      "var(--color-on-surface-muted)"
+     :color           "var(--color-surface)"}]
+
+   [:.item-grid-separator
+    {:grid-column    "1 / -1"
+     :font-size      (rem 0.75)
+     :font-weight    700
+     :text-transform "uppercase"
+     :letter-spacing "0.08em"
+     :color          "var(--color-on-surface-muted)"
+     :padding-top    (rem 0.5)
+     :border-top     "1px solid var(--color-outline)"}]
 
    [:.item-card-actions
     {:display         "flex"

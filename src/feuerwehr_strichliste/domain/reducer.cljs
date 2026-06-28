@@ -59,6 +59,14 @@
   [snapshot {:keys [item/id item/stock]}]
   (assoc-in snapshot [:items id :item/stock] stock))
 
+(defmethod reduce-event :item/deactivated
+  [snapshot {:keys [item/id]}]
+  (assoc-in snapshot [:items id :item/status] :inactive))
+
+(defmethod reduce-event :item/reactivated
+  [snapshot {:keys [item/id]}]
+  (assoc-in snapshot [:items id :item/status] :active))
+
 (defmethod reduce-event :item/created
   [snapshot {:keys [event/id
                     item/type

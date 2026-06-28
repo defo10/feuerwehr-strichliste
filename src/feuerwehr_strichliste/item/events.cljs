@@ -246,6 +246,44 @@
                      :persist! {:events [event] :snapshot snapshot}}))))))
 
 (re-frame/reg-event-fx
+ ::item-delete
+ (fn-traced [{:keys [db]} [_ item-id]]
+            (let [user-id (get-in db [:ui :current-user-id])
+                  role    (get-in db [:snapshot :users user-id :user/role])]
+              (if (permissions/can? role :manage-items)
+                (let [{:keys [snapshot event]}
+                      (reducer/apply-event
+                       (:snapshot db)
+                       (fn [id]
+                         {:event/type      :item/deactivated
+                          :event/id        id
+                          :event/timestamp (.toISOString (js/Date.))
+                          :event/actor     user-id
+                          :item/id         item-id}))]
+                  {:db       (assoc db :snapshot snapshot)
+                   :persist! {:events [event] :snapshot snapshot}})
+                {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
+
+(re-frame/reg-event-fx
+ ::item-reactivate
+ (fn-traced [{:keys [db]} [_ item-id]]
+            (let [user-id (get-in db [:ui :current-user-id])
+                  role    (get-in db [:snapshot :users user-id :user/role])]
+              (if (permissions/can? role :manage-items)
+                (let [{:keys [snapshot event]}
+                      (reducer/apply-event
+                       (:snapshot db)
+                       (fn [id]
+                         {:event/type      :item/reactivated
+                          :event/id        id
+                          :event/timestamp (.toISOString (js/Date.))
+                          :event/actor     user-id
+                          :item/id         item-id}))]
+                  {:db       (assoc db :snapshot snapshot)
+                   :persist! {:events [event] :snapshot snapshot}})
+                {:db (assoc-in db [:ui :error] {:type :errors/not-allowed :message "Not allowed"})}))))
+
+(re-frame/reg-event-fx
  ::item-create
  (fn-traced [{:keys [db]} [_ {:item/keys [type name price stock] :keys [image]}]]
             (let [user-id (get-in db [:ui :current-user-id])

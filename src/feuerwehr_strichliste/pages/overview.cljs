@@ -104,7 +104,8 @@
   (let [current-user    (re-frame/subscribe [::app-subs/current-user])
         balance         (re-frame/subscribe [::app-subs/current-user-balance])
         active-tab      (re-frame/subscribe [::item-subs/active-tab])
-        items-by-type   (re-frame/subscribe [::item-subs/items-by-type])
+        items-by-type         (re-frame/subscribe [::item-subs/items-by-type])
+        inactive-items-by-type (re-frame/subscribe [::item-subs/inactive-items-by-type])
         cart-entries    (re-frame/subscribe [::item-subs/cart-entries])
         editing-item    (re-frame/subscribe [::item-subs/editing-item])
         can-manage?     (re-frame/subscribe [::item-subs/can-manage-items?])
@@ -166,21 +167,27 @@
              :on-click #(re-frame/dispatch [::item-events/set-active-tab :food])}
             "Essen"]]
           [:div.item-grid
-           (concat
-            (when @can-manage?
-              [^{:key "new-item"}
-               [:button.item-card
-                {:on-click #(reset! drawer-open? true)
-                 :style    {:background      "#4CAF50"
-                            :border-color    "#4CAF50"
-                            :color           "#fff"
-                            :cursor          "pointer"
-                            :justify-content "center"
-                            :align-items     "center"}}
-                [:span.icon.is-large [:i.fas.fa-plus]]
-                [:span {:style {:font-size "0.9rem" :font-weight 600}} "Neu"]]])
-            (for [item (get @items-by-type tab [])]
-              ^{:key (:item/id item)} [item-card item]))]]
+           (let [inactive (get @inactive-items-by-type tab [])]
+             (concat
+              (when @can-manage?
+                [^{:key "new-item"}
+                 [:button.item-card
+                  {:on-click #(reset! drawer-open? true)
+                   :style    {:background      "#4CAF50"
+                              :border-color    "#4CAF50"
+                              :color           "#fff"
+                              :cursor          "pointer"
+                              :justify-content "center"
+                              :align-items     "center"}}
+                  [:span.icon.is-large [:i.fas.fa-plus]]
+                  [:span {:style {:font-size "0.9rem" :font-weight 600}} "Neu"]]])
+              (for [item (get @items-by-type tab [])]
+                ^{:key (:item/id item)} [item-card item])
+              (when (and @can-manage? (seq inactive))
+                (cons ^{:key "inactive-separator"}
+                 [:div.item-grid-separator "Inaktiv"]
+                      (for [item inactive]
+                        ^{:key (:item/id item)} [item-card item])))))]]
          (when pane?
            [session-pane bal @cart-entries @pending-top-up @top-up-editing? user])
          [drawer {:open?    @drawer-open?

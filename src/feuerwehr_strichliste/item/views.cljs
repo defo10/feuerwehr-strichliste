@@ -3,6 +3,7 @@
             [re-frame.core :as re-frame]
             [feuerwehr-strichliste.item.events :as events]
             [feuerwehr-strichliste.item.subs :as subs]
+            [feuerwehr-strichliste.components.modal :refer [modal]]
             [clojure.string :as str]))
 
 (defn format-price [cents]
@@ -16,34 +17,39 @@
   (let [qty-sub     (re-frame/subscribe [::subs/cart-qty id])
         image-sub   (re-frame/subscribe [::subs/item-image-url id])
         can-manage? (re-frame/subscribe [::subs/can-manage-items?])]
-    (fn [{:item/keys [id name price stock] :as item}]
+    (fn [{:item/keys [id name price stock status] :as item}]
       (let [qty        @qty-sub
             image-url  @image-sub
-            available? (pos? stock)
+            inactive?  (= :inactive status)
+            available? (and (not inactive?) (pos? stock))
             selected?  (pos? qty)
             at-max?    (>= qty stock)]
         [:div.item-card {:class (str (when selected? "item-card--selected ")
-                                     (when-not available? "item-card--empty"))}
+                                     (when inactive? "item-card--inactive ")
+                                     (when (and (not inactive?) (not available?)) "item-card--empty"))}
          (when @can-manage?
            [:div.item-card-actions
             [:button.item-card-edit
              {:on-click #(re-frame/dispatch [::events/edit-item item])}
              [:span.icon.is-small [:i.fas.fa-pencil]]]])
+         (when inactive?
+           [:span.item-card-badge "Inaktiv"])
          (when image-url
            [:img.item-card-image {:src image-url :alt name}])
          [:div.item-card-header
           [:span.item-card-name name]
-          [:span.item-card-meta (if available?
-                                  (str (format-price price) " / " stock " übrig")
-                                  (str (format-price price) " / Ausverkauft"))]]
+          [:span.item-card-meta
+           (if (and (not inactive?) (not available?))
+             (str (format-price price) " / Ausverkauft")
+             (str (format-price price) " / " stock " übrig"))]]
          [:div.item-card-controls
           [:button.item-card-btn
-           {:disabled (or (not available?) (zero? qty))
+           {:disabled (or inactive? (not available?) (zero? qty))
             :on-click #(re-frame/dispatch [::events/decrement id])}
            "−"]
           [:span.item-card-qty (str qty)]
           [:button.item-card-btn
-           {:disabled (or (not available?) at-max?)
+           {:disabled (or inactive? (not available?) at-max?)
             :on-click #(re-frame/dispatch [::events/increment id])}
            "+"]]]))))
 
@@ -232,12 +238,41 @@
                               (on-close))}])
 
 (defn edit-item-form [item on-close]
-  (let [image-sub (re-frame/subscribe [::subs/item-image-url (:item/id item)])]
+  (let [image-sub     (re-frame/subscribe [::subs/item-image-url (:item/id item)])
+        show-confirm? (r/atom false)]
     (fn [item on-close]
-      [item-form {:initial            (select-keys item [:item/type :item/name :item/price :item/stock])
-                  :existing-image-url @image-sub
-                  :submit-label       "Speichern"
-                  :on-submit          (fn [data]
-                                        (re-frame/dispatch [::events/item-update
-                                                            (assoc data :item/id (:item/id item))])
-                                        (on-close))}])))
+      (let [inactive? (= :inactive (:item/status item))]
+        [:<>
+         [item-form {:initial            (select-keys item [:item/type :item/name :item/price :item/stock])
+                     :existing-image-url @image-sub
+                     :submit-label       "Speichern"
+                     :on-submit          (fn [data]
+                                           (re-frame/dispatch [::events/item-update
+                                                               (assoc data :item/id (:item/id item))])
+                                           (on-close))}]
+         [:div {:style {:padding "0 1.5rem 1.5rem"}}
+          (if inactive?
+            [:button.button.is-success.is-fullwidth
+             {:type     "button"
+              :on-click #(reset! show-confirm? true)}
+             "Reaktivieren"]
+            [:button.button.is-danger.is-light.is-fullwidth
+             {:type     "button"
+              :on-click #(reset! show-confirm? true)}
+             "Löschen"])]
+         (when @show-confirm?
+           [modal {:on-close #(reset! show-confirm? false)}
+            [:p.confirm-message
+             (if inactive? "Artikel reaktivieren?" "Artikel wirklich löschen?")]
+            [:div.confirm-actions
+             [:button.button
+              {:class    (if inactive? "is-success" "is-danger")
+               :on-click #(do (if inactive?
+                                (re-frame/dispatch [::events/item-reactivate (:item/id item)])
+                                (re-frame/dispatch [::events/item-delete (:item/id item)]))
+                              (reset! show-confirm? false)
+                              (on-close))}
+              (if inactive? "Reaktivieren" "Löschen")]
+             [:button.button.is-light
+              {:on-click #(reset! show-confirm? false)}
+              "Abbrechen"]]])]))))
