@@ -37,7 +37,8 @@
      "--shadow-hover"           "0 4px 12px rgba(0,0,0,0.12)"
      "--radius"                 "12px"}]
 
-   [:* {:box-sizing "border-box" :margin 0 :padding 0}]
+   [:* {:box-sizing "border-box" :margin 0 :padding 0
+        :-webkit-user-select "none" :user-select "none"}]
 
    [:html {:overscroll-behavior "none"}]
 
