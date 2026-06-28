@@ -113,14 +113,12 @@
         pending-top-up  (re-frame/subscribe [::top-up-subs/pending-top-up])
         top-up-editing? (re-frame/subscribe [::top-up-subs/top-up-editing?])
         pending-rfid    (re-frame/subscribe [::auth-subs/pending-rfid])
-        pane-open?      (r/atom true)
         drawer-open?    (r/atom false)]
     (fn []
       (let [user        @current-user
             bal         @balance
             tab         @active-tab
             admin?      (= :admin (:user/role user))
-            pane?       @pane-open?
             rfid-string @pending-rfid]
         [:div.overview-layout
          [:div.main-content
@@ -148,15 +146,7 @@
                [:button.button.is-light.is-small
                 {:on-click #(re-frame/dispatch [::events/navigate :activity])}
                 [:span.icon.is-small [:i.fas.fa-list]]
-                [:span "Aktivität"]]])]
-           [:div.top-nav-right
-            (when-not pane?
-              [:div.top-nav-balance-area
-               [:span.top-nav-balance {:class (balance-class bal)}
-                (format-balance bal)]])
-            [:button.button.is-light.is-small
-             {:on-click #(swap! pane-open? not)}
-             [:span.icon.is-small [:i.fas.fa-columns]]]]]
+                [:span "Aktivität"]]])]]
           [:div.tab-bar
            [:button.tab
             {:class    (when (= tab :drink) "tab--active")
@@ -188,8 +178,7 @@
                  [:div.item-grid-separator "Inaktiv"]
                       (for [item inactive]
                         ^{:key (:item/id item)} [item-card item])))))]]
-         (when pane?
-           [session-pane bal @cart-entries @pending-top-up @top-up-editing? user])
+         [session-pane bal @cart-entries @pending-top-up @top-up-editing? user]
          [drawer {:open?    @drawer-open?
                   :on-close #(reset! drawer-open? false)
                   :title    "Neues Essen/Trinken"}
