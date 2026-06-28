@@ -1,3 +1,6 @@
+.DS_Store
+.calva/
+
 /out/
 /resources/public/js/compiled/
 /target/
