@@ -32,7 +32,9 @@
    [:history/timestamp string?]
    [:history/actor     string?]
    [:history/status    [:enum :active :voided]]
-   [:checkout/entries  [:sequential CheckoutEntry]]])
+   [:checkout/entries  [:sequential CheckoutEntry]]
+   ;; only set when actor has :guest role
+   [:checkout/reference {:optional true} string?]])
 
 (def TopUpHistoryEntry
   [:map
@@ -44,7 +46,9 @@
    [:top-up/amount        pos-int?]
    [:top-up/reviewed-at        {:optional true} string?]
    [:top-up/reviewed-by        {:optional true} string?]
-   [:top-up/reviewed-by-name   {:optional true} string?]])
+   [:top-up/reviewed-by-name   {:optional true} string?]
+   ;; only set when actor has :guest role
+   [:checkout/reference        {:optional true} string?]])
 
 (def HistoryEntry
   [:or CheckoutHistoryEntry TopUpHistoryEntry])
@@ -61,7 +65,7 @@
   [:map
    [:user/id        string?]
    [:user/name      [:string {:gen/gen (gen/elements german-names)}]]
-   [:user/role      [:enum :member :kitchen :admin]]
+   [:user/role      [:enum :member :kitchen :admin :guest]]
    [:user/pin-hash  [:string {:gen/gen (gen/return "$2b$10$fSviXQEHvZ/dHtwvKUREbOFZcc9Recla6YM4vFMmgbLb9hyNLpij.")}]]
    [:user/rfid-hash {:optional true} string?]
    [:user/status    [:enum :active :inactive :suspended]]
@@ -92,7 +96,7 @@
    [:event/actor     string?]
    [:event/type      [:= :user/created]]
    [:user/name       string?]
-   [:user/role       [:enum :member :kitchen :admin]]
+   [:user/role       [:enum :member :kitchen :admin :guest]]
    [:user/pin-hash   string?]])
 
 (def ItemCreatedEvent
@@ -129,7 +133,9 @@
    [:event/actor      string?]
    [:event/type       [:= :cart/checked-out]]
    [:event/subject    {:optional true} string?]
-   [:checkout/entries [:sequential CheckoutEntry]]])
+   [:checkout/entries [:sequential CheckoutEntry]]
+   ;; only set when actor has :guest role
+   [:checkout/reference {:optional true} string?]])
 
 (def ItemEditedEvent
   [:map
@@ -160,7 +166,7 @@
    [:event/type      [:= :user/updated]]
    [:user/id         string?]
    [:user/name       string?]
-   [:user/role       [:enum :member :kitchen :admin]]
+   [:user/role       [:enum :member :kitchen :admin :guest]]
    [:user/status     [:enum :active :inactive :suspended]]
    [:user/pin-hash   {:optional true} string?]
    [:user/rfid-hash  {:optional true} string?]])
@@ -172,7 +178,9 @@
    [:event/actor     string?]
    [:event/type      [:= :balance/top-up-requested]]
    [:event/subject   string?]
-   [:top-up/amount   pos-int?]])
+   [:top-up/amount   pos-int?]
+   ;; only set when actor has :guest role
+   [:checkout/reference {:optional true} string?]])
 
 (def TopUpConfirmedEvent
   [:map

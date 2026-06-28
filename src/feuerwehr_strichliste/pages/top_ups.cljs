@@ -7,6 +7,10 @@
    [feuerwehr-strichliste.user.subs :as user-subs]
    [feuerwehr-strichliste.item.views :refer [format-price]]))
 
+(defn- user-display [users-map uid reference]
+  (let [n (get-in users-map [uid :user/name] "?")]
+    (if (seq reference) (str n " (" reference ")") n)))
+
 (defn- format-date [iso]
   (.toLocaleString (js/Date. iso) "de-DE"
                    #js {:day "2-digit" :month "2-digit" :year "2-digit"
@@ -19,7 +23,7 @@
                          (map (fn [t]
                                 (str "<tr>"
                                      "<td>" (format-date (:top-up/requested-at t)) "</td>"
-                                     "<td>" (get-in users-map [(:top-up/user-id t) :user/name] "?") "</td>"
+                                     "<td>" (user-display users-map (:top-up/user-id t) (:checkout/reference t)) "</td>"
                                      "<td>Einzahlung</td>"
                                      "<td>" (format-price (:top-up/amount t)) "</td>"
                                      "<td>" (get-in users-map [(:top-up/reviewed-by t) :user/name] "?") "</td>"
@@ -28,6 +32,7 @@
                               confirmed))
         html      (str "<!DOCTYPE html><html><head><meta charset='utf-8'>"
                        "<style>"
+                       "@page{size:A4 landscape}"
                        "body{font-family:sans-serif;font-size:13px;padding:2rem}"
                        "h2{margin-bottom:0.25rem}"
                        "p{margin-bottom:1rem;color:#666;font-size:12px}"
@@ -84,7 +89,7 @@
 
 (defn- top-up-row [top-up users-map]
   (let [status    (:top-up/status top-up)
-        user-name (get-in users-map [(:top-up/user-id top-up) :user/name] "?")]
+        user-name (user-display users-map (:top-up/user-id top-up) (:checkout/reference top-up))]
     [:tr {:class (when (= status :cancelled) "has-text-grey")}
      [:td user-name]
      [:td.has-text-weight-semibold (format-price (:top-up/amount top-up))]

@@ -672,7 +672,7 @@
     ["&.rfid-toast--error" {:background "var(--color-primary)"
                             :color      "var(--color-on-primary)"}]]
 
-   [:.rfid-confirm-overlay
+   [:.confirm-overlay
     {:position        "fixed"
      :inset           0
      :z-index         1000
@@ -681,7 +681,7 @@
      :justify-content "center"
      :animation       "overlay-in 0.2s ease forwards"}]
 
-   [:.rfid-confirm-modal
+   [:.confirm-modal
     {:background     "var(--color-surface)"
      :border-radius  "var(--radius)"
      :padding        "2rem"
@@ -693,12 +693,12 @@
      :gap            "1.5rem"
      :animation      "modal-in 0.2s ease"}]
 
-   [:.rfid-confirm-message
+   [:.confirm-message
     {:font-size   (rem 1.1)
      :font-weight 500
      :text-align  "center"}]
 
-   [:.rfid-confirm-actions
+   [:.confirm-actions
     {:display         "flex"
      :justify-content "center"
      :gap             "0.75rem"}]])

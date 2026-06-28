@@ -13,6 +13,7 @@
    [feuerwehr-strichliste.top-up.subs :as top-up-subs]
    [feuerwehr-strichliste.top-up.events :as top-up-events]
    [feuerwehr-strichliste.components.drawer :refer [drawer]]
+   [feuerwehr-strichliste.components.modal :refer [modal]]
    [feuerwehr-strichliste.item.views :refer [new-item-form edit-item-form item-card format-price]]
    [feuerwehr-strichliste.user.views :refer [edit-user-form]]
    [feuerwehr-strichliste.top-up.views :refer [top-up-form]]))
@@ -25,59 +26,79 @@
 (defn- balance-class [cents]
   (cond (pos? cents) "positive" (neg? cents) "negative" :else "zero"))
 
-(defn- session-pane [balance cart-entries pending-top-up top-up-editing? user]
-  (let [cart-sum  (reduce (fn [s {:keys [item quantity]}] (+ s (* quantity (:item/price item)))) 0 cart-entries)
-        tu-sum    (or (:amount pending-top-up) 0)
-        projected (- (+ balance tu-sum) cart-sum)]
-    [:div.session-pane
-     [:div.session-pane-balance
-      [:div.session-pane-balance-label "Guthaben"]
-      [:span.session-pane-balance-amount {:class (balance-class projected)}
-       (format-balance projected)]
-      (if top-up-editing?
+(defn- session-pane [_balance _cart-entries _pending-top-up _top-up-editing? _user]
+  (let [show-ref-dialog? (r/atom false)
+        ref-input        (r/atom "")]
+    (fn [balance cart-entries pending-top-up top-up-editing? user]
+      (let [cart-sum  (reduce (fn [s {:keys [item quantity]}] (+ s (* quantity (:item/price item)))) 0 cart-entries)
+            tu-sum    (or (:amount pending-top-up) 0)
+            projected (- (+ balance tu-sum) cart-sum)
+            guest?    (= :guest (:user/role user))
+            finish!   #(do (re-frame/dispatch [::item-events/confirm-checkout %])
+                           (re-frame/dispatch [::auth-events/sign-out]))]
         [:<>
-         [top-up-form {:current-user   user
-                       :initial-amount (:amount pending-top-up)
-                       :on-close       #(re-frame/dispatch [::top-up-events/close-top-up-form])}]
-         [:p.top-up-info
-          "Bitte den Betrag zeitnah auf folgendes Konto überweisen:" [:br]
-          "DExxx xxxx xxxx xxxx xxxx" [:br]
-          "oder per paypal an:" [:br]
-          "sandro@test.com"]]
-        [:button.button.is-light.is-fullwidth
-         {:on-click #(re-frame/dispatch [::top-up-events/open-top-up-form])}
-         [:span.icon.is-small [:i.fas.fa-coins]]
-         [:span "Einzahlen"]])]
-     [:div.session-pane-entries
-      (if (and (empty? cart-entries) (nil? pending-top-up))
-        [:div.session-pane-empty "Noch nichts ausgewählt"]
-        [:<>
-         (for [{:keys [item quantity]} cart-entries]
-           ^{:key (:item/id item)}
-           [:div.session-entry
-            [:span.session-entry-name (:item/name item)]
-            [:span.session-entry-qty (str "× " quantity)]
-            [:span.session-entry-price (format-price (* quantity (:item/price item)))]
-            [:button.session-entry-action
-             {:on-click #(re-frame/dispatch [::item-events/decrement (:item/id item)])}
-             [:span.icon.is-small [:i.fas.fa-minus]]]])
-         (when pending-top-up
-           [:div.session-entry
-            [:span.session-entry-name "Einzahlung"]
-            [:span.session-entry-qty ""]
-            [:span.session-entry-price {:style {:color "green"}}
-             (str "+ " (format-price (:amount pending-top-up)))]
-            [:button.session-entry-action
-             {:on-click #(re-frame/dispatch [::top-up-events/open-top-up-form])}
-             [:span.icon.is-small [:i.fas.fa-pen]]]
-            [:button.session-entry-action
-             {:on-click #(re-frame/dispatch [::top-up-events/clear-staged-top-up])}
-             [:span.icon.is-small [:i.fas.fa-times]]]])])]
-     [:div.session-pane-footer
-      [:button.button.is-primary.is-fullwidth
-       {:on-click #(do (re-frame/dispatch [::item-events/confirm-checkout])
-                       (re-frame/dispatch [::auth-events/sign-out]))}
-       "Fertig"]]]))
+         [:div.session-pane
+          [:div.session-pane-balance
+           [:div.session-pane-balance-label "Guthaben"]
+           [:span.session-pane-balance-amount {:class (balance-class projected)}
+            (format-balance projected)]
+           (if top-up-editing?
+             [:<>
+              [top-up-form {:current-user   user
+                            :initial-amount (:amount pending-top-up)
+                            :on-close       #(re-frame/dispatch [::top-up-events/close-top-up-form])}]
+              [:p.top-up-info
+               "Bitte den Betrag zeitnah auf folgendes Konto überweisen:" [:br]
+               "DExxx xxxx xxxx xxxx xxxx" [:br]
+               "oder per paypal an:" [:br]
+               "sandro@test.com"]]
+             [:button.button.is-light.is-fullwidth
+              {:on-click #(re-frame/dispatch [::top-up-events/open-top-up-form])}
+              [:span.icon.is-small [:i.fas.fa-coins]]
+              [:span "Einzahlen"]])]
+          [:div.session-pane-entries
+           (if (and (empty? cart-entries) (nil? pending-top-up))
+             [:div.session-pane-empty "Noch nichts ausgewählt"]
+             [:<>
+              (for [{:keys [item quantity]} cart-entries]
+                ^{:key (:item/id item)}
+                [:div.session-entry
+                 [:span.session-entry-name (:item/name item)]
+                 [:span.session-entry-qty (str "× " quantity)]
+                 [:span.session-entry-price (format-price (* quantity (:item/price item)))]
+                 [:button.session-entry-action
+                  {:on-click #(re-frame/dispatch [::item-events/decrement (:item/id item)])}
+                  [:span.icon.is-small [:i.fas.fa-minus]]]])
+              (when pending-top-up
+                [:div.session-entry
+                 [:span.session-entry-name "Einzahlung"]
+                 [:span.session-entry-qty ""]
+                 [:span.session-entry-price {:style {:color "green"}}
+                  (str "+ " (format-price (:amount pending-top-up)))]
+                 [:button.session-entry-action
+                  {:on-click #(re-frame/dispatch [::top-up-events/open-top-up-form])}
+                  [:span.icon.is-small [:i.fas.fa-pen]]]
+                 [:button.session-entry-action
+                  {:on-click #(re-frame/dispatch [::top-up-events/clear-staged-top-up])}
+                  [:span.icon.is-small [:i.fas.fa-times]]]])])]
+          [:div.session-pane-footer
+           [:button.button.is-primary.is-fullwidth
+            {:on-click #(if guest?
+                          (reset! show-ref-dialog? true)
+                          (finish! {}))}
+            "Fertig"]]]
+         (when @show-ref-dialog?
+           [modal {:on-close #(reset! show-ref-dialog? false)}
+            [:p.confirm-message "Referenz eingeben (optional)"]
+            [:input.input {:value       @ref-input
+                           :auto-focus  true
+                           :on-change   #(reset! ref-input (.. % -target -value))}]
+            [:div.confirm-actions
+             [:button.button.is-primary
+              {:on-click #(do (finish! {:reference (when (seq @ref-input) @ref-input)})
+                              (reset! show-ref-dialog? false)
+                              (reset! ref-input ""))}
+              "Fertig"]]])]))))
 
 (defn overview-page []
   (let [current-user    (re-frame/subscribe [::app-subs/current-user])
@@ -179,15 +200,12 @@
             [edit-user-form user :self
              #(re-frame/dispatch [::user-events/close-profile])])]
          (when rfid-string
-           [:div.rfid-confirm-overlay
-            {:on-click #(re-frame/dispatch [::auth-events/clear-pending-rfid])}
-            [:div.rfid-confirm-modal
-             {:on-click #(.stopPropagation %)}
-             [:p.rfid-confirm-message "Chip erkannt. Diesen Chip mit deinem Konto verknüpfen?"]
-             [:div.rfid-confirm-actions
-              [:button.button.is-primary
-               {:on-click #(re-frame/dispatch [::user-events/user-link-rfid rfid-string])}
-               "Ja, verknüpfen"]
-              [:button.button.is-light
-               {:on-click #(re-frame/dispatch [::auth-events/clear-pending-rfid])}
-               "Nein"]]]])]))))
+           [modal {:on-close #(re-frame/dispatch [::auth-events/clear-pending-rfid])}
+            [:p.confirm-message "Chip erkannt. Diesen Chip mit deinem Konto verknüpfen?"]
+            [:div.confirm-actions
+             [:button.button.is-primary
+              {:on-click #(re-frame/dispatch [::user-events/user-link-rfid rfid-string])}
+              "Ja, verknüpfen"]
+             [:button.button.is-light
+              {:on-click #(re-frame/dispatch [::auth-events/clear-pending-rfid])}
+              "Nein"]]])]))))

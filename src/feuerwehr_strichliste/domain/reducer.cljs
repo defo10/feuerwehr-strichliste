@@ -20,7 +20,7 @@
    :balances {}
    :items    {}})
 
-(defn- merge-non-nil [target updates]
+(defn merge-non-nil [target updates]
   (reduce-kv (fn [m k v] (if (nil? v) m (assoc m k v))) target updates))
 
 (defmulti reduce-event (fn [_snapshot event] (:event/type event)))
@@ -76,7 +76,7 @@
               image-key (assoc :item/image-key image-key))))
 
 (defmethod reduce-event :cart/checked-out
-  [snapshot {:keys [event/id event/actor event/subject event/timestamp checkout/entries]}]
+  [snapshot {:keys [event/id event/actor event/subject event/timestamp checkout/entries checkout/reference]}]
   (let [uid (or subject actor)]
     (-> (reduce (fn [snap {:keys [item-id quantity unit-price]}]
                   (-> snap
@@ -85,25 +85,29 @@
                 snapshot
                 entries)
         (update-in [:users uid :user/history] append-history-entry!
-                   {:history/id        id
-                    :history/type      :checkout
-                    :history/timestamp timestamp
-                    :history/actor     actor
-                    :history/status    :active
-                    :checkout/entries  entries}))))
+                   (merge-non-nil
+                    {:history/id        id
+                     :history/type      :checkout
+                     :history/timestamp timestamp
+                     :history/actor     actor
+                     :history/status    :active
+                     :checkout/entries  entries}
+                    {:checkout/reference reference})))))
 
 (defmethod reduce-event :balance/top-up-requested
-  [snapshot {:keys [event/id event/actor event/subject event/timestamp top-up/amount] :as event}]
+  [snapshot {:keys [event/id event/actor event/subject event/timestamp top-up/amount checkout/reference] :as event}]
   (let [uid (or subject (:top-up/user-id event))]
     (-> snapshot
         (update-in [:balances uid] (fnil + 0) amount)
         (update-in [:users uid :user/history] append-history-entry!
-                   {:history/id        id
-                    :history/type      :top-up
-                    :history/timestamp timestamp
-                    :history/actor     actor
-                    :history/status    :active
-                    :top-up/amount     amount}))))
+                   (merge-non-nil
+                    {:history/id        id
+                     :history/type      :top-up
+                     :history/timestamp timestamp
+                     :history/actor     actor
+                     :history/status    :active
+                     :top-up/amount     amount}
+                    {:checkout/reference reference})))))
 
 (defmethod reduce-event :balance/top-up-confirmed
   [snapshot {:keys [event/subject event/actor event/timestamp top-up/request-id]}]

@@ -6,7 +6,7 @@
             [feuerwehr-strichliste.auth.events :as auth-events]))
 
 (def role-labels
-  {:member "Mitglied" :kitchen "Küche" :admin "Admin"})
+  {:member "Mitglied" :kitchen "Küche" :admin "Admin" :guest "Gast"})
 
 (def status-labels
   {:active "Aktiv" :inactive "Inaktiv" :suspended "Gesperrt"})
@@ -63,7 +63,7 @@
 
          [:div.form-field
           [:label (if (= mode :create) "PIN (4 Ziffern)"
-                    [:<> "Neuer PIN" [:span.optional-hint " (4 Ziffern, leer lassen = unverändert)"]])]
+                      [:<> "Neuer PIN" [:span.optional-hint " (4 Ziffern, leer lassen = unverändert)"]])]
           [:input.input {:type        "password"
                          :input-mode  "numeric"
                          :placeholder "••••"

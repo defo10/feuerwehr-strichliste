@@ -3,7 +3,7 @@
    [re-frame.core :as re-frame]
    [konserve.core :as k]
    [cljs.core.async :as async :refer [go <!]]
-   [feuerwehr-strichliste.domain.reducer :as reducer]
+   [feuerwehr-strichliste.domain.reducer :as reducer :refer [merge-non-nil]]
    [feuerwehr-strichliste.domain.permissions :as permissions]
    [feuerwehr-strichliste.domain.storage :as storage]
    [day8.re-frame.tracing :refer-macros [fn-traced]]))
@@ -136,11 +136,13 @@
 
 (re-frame/reg-event-fx
  ::confirm-checkout
- (fn-traced [{:keys [db]} _]
+ (fn-traced [{:keys [db]} [_ {:keys [reference]}]]
             (let [cart       (get-in db [:ui :cart])
                   items      (get-in db [:snapshot :items])
                   user-id    (get-in db [:ui :current-user-id])
                   pending-tu (get-in db [:ui :pending-top-up])
+                  guest?     (= :guest (get-in db [:snapshot :users user-id :user/role]))
+                  ref        (when (and guest? (seq reference)) reference)
                   ts         (.toISOString (js/Date.))
                   entries    (->> cart
                                   (keep (fn [[item-id qty]]
@@ -156,11 +158,13 @@
                           (reducer/apply-event
                            (:snapshot db)
                            (fn [id]
-                             {:event/type       :cart/checked-out
-                              :event/id         id
-                              :event/timestamp  ts
-                              :event/actor      user-id
-                              :checkout/entries entries}))]
+                             (merge-non-nil
+                              {:event/type       :cart/checked-out
+                               :event/id         id
+                               :event/timestamp  ts
+                               :event/actor      user-id
+                               :checkout/entries entries}
+                              {:checkout/reference ref})))]
                       [snapshot event])
                     [(:snapshot db) nil])
                   [snap2 tu-event]
@@ -169,12 +173,14 @@
                           (reducer/apply-event
                            snap1
                            (fn [id]
-                             {:event/type      :balance/top-up-requested
-                              :event/id        id
-                              :event/timestamp ts
-                              :event/actor     user-id
-                              :event/subject   (:user-id pending-tu)
-                              :top-up/amount   (:amount pending-tu)}))]
+                             (merge-non-nil
+                              {:event/type      :balance/top-up-requested
+                               :event/id        id
+                               :event/timestamp ts
+                               :event/actor     user-id
+                               :event/subject   (:user-id pending-tu)
+                               :top-up/amount   (:amount pending-tu)}
+                              {:checkout/reference ref})))]
                       [snapshot event])
                     [snap1 nil])
                   events (filterv some? [cart-event tu-event])]

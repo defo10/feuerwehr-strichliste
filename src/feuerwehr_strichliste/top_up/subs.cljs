@@ -22,8 +22,9 @@
                                     :active    :pending
                                     :confirmed :confirmed
                                     :cancelled :cancelled)
-             :top-up/reviewed-at (:top-up/reviewed-at entry)
-             :top-up/reviewed-by (:top-up/reviewed-by entry)}]))))
+             :top-up/reviewed-at  (:top-up/reviewed-at entry)
+             :top-up/reviewed-by  (:top-up/reviewed-by entry)
+             :checkout/reference  (:checkout/reference entry)}]))))
 
 (re-frame/reg-sub
  ::top-ups-sorted

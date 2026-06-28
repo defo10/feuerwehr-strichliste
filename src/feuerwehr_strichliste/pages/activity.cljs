@@ -124,10 +124,12 @@
   (let [actor-id   (:event/actor event)
         subject-id (:event/subject event)
         actor-name (get-in users-map [actor-id :user/name] "?")
-        nutzer     (if (and subject-id (not= subject-id actor-id))
+        ref        (:checkout/reference event)
+        base-name  (if (and subject-id (not= subject-id actor-id))
                      (str (get-in users-map [subject-id :user/name] "?")
                           " (durch " actor-name ")")
-                     actor-name)]
+                     actor-name)
+        nutzer     (if (seq ref) (str base-name " (" ref ")") base-name)]
     [:tr
      [:td.is-size-7.has-text-grey (format-date (:event/timestamp event))]
      [:td (event-type-label (:event/type event))]

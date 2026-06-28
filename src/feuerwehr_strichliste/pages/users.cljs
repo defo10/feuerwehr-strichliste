@@ -60,18 +60,21 @@
                         :hour "2-digit" :minute "2-digit"}))
 
 (defn- event-details [event items-map]
-  (case (:history/type event)
-    :checkout
-    (let [entries (:checkout/entries event)
-          total   (reduce (fn [s {:keys [quantity unit-price]}] (+ s (* quantity unit-price))) 0 entries)]
-      (str (str/join ", "
-                     (map (fn [{:keys [item-id quantity]}]
-                            (str quantity "× " (get-in items-map [item-id :item/name] "?")))
-                          entries))
-           " · −" (format-price total)))
-    :top-up
-    (format-price (:top-up/amount event))
-    ""))
+  (let [ref    (:checkout/reference event)
+        suffix (when (seq ref) (str " (" ref ")"))]
+    (case (:history/type event)
+      :checkout
+      (let [entries (:checkout/entries event)
+            total   (reduce (fn [s {:keys [quantity unit-price]}] (+ s (* quantity unit-price))) 0 entries)]
+        (str (str/join ", "
+                       (map (fn [{:keys [item-id quantity]}]
+                              (str quantity "× " (get-in items-map [item-id :item/name] "?")))
+                            entries))
+             " · −" (format-price total)
+             suffix))
+      :top-up
+      (str (format-price (:top-up/amount event)) suffix)
+      "")))
 
 (defn- user-row [user all-balances can-manage? expanded-users anchor-id]
   (let [expanded? (contains? @expanded-users (:user/id user))]
