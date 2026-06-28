@@ -1,7 +1,9 @@
 (ns feuerwehr-strichliste.pages.top-ups
   (:require
+   [reagent.core :as r]
    [re-frame.core :as re-frame]
    [feuerwehr-strichliste.events :as events]
+   [feuerwehr-strichliste.util :as util]
    [feuerwehr-strichliste.top-up.subs :as top-up-subs]
    [feuerwehr-strichliste.top-up.events :as top-up-events]
    [feuerwehr-strichliste.user.subs :as user-subs]
@@ -11,18 +13,13 @@
   (let [n (get-in users-map [uid :user/name] "?")]
     (if (seq reference) (str n " (" reference ")") n)))
 
-(defn- format-date [iso]
-  (.toLocaleString (js/Date. iso) "de-DE"
-                   #js {:day "2-digit" :month "2-digit" :year "2-digit"
-                        :hour "2-digit" :minute "2-digit"}))
-
 (defn- export-pdf! [top-ups users-map]
   (let [confirmed (filter #(= :confirmed (:top-up/status %)) top-ups)
         today     (.toLocaleDateString (js/Date.) "de-DE")
         rows      (apply str
                          (map (fn [t]
                                 (str "<tr>"
-                                     "<td>" (format-date (:top-up/requested-at t)) "</td>"
+                                     "<td>" (util/format-date (:top-up/requested-at t)) "</td>"
                                      "<td>" (user-display users-map (:top-up/user-id t) (:checkout/reference t)) "</td>"
                                      "<td>Einzahlung</td>"
                                      "<td>" (format-price (:top-up/amount t)) "</td>"
@@ -79,13 +76,13 @@
        [:span.tag.is-success "Bestätigt"]
        [:br]
        [:span.is-size-7.has-text-grey
-        (str reviewed-by " · " (format-date (:top-up/reviewed-at top-up)))]]
+        (str reviewed-by " · " (util/format-date (:top-up/reviewed-at top-up)))]]
       :cancelled
       [:td
        [:span.tag "Storniert"]
        [:br]
        [:span.is-size-7.has-text-grey
-        (str reviewed-by " · " (format-date (:top-up/reviewed-at top-up)))]])))
+        (str reviewed-by " · " (util/format-date (:top-up/reviewed-at top-up)))]])))
 
 (defn- top-up-row [top-up users-map]
   (let [status    (:top-up/status top-up)
@@ -93,15 +90,27 @@
     [:tr {:class (when (= status :cancelled) "has-text-grey")}
      [:td user-name]
      [:td.has-text-weight-semibold (format-price (:top-up/amount top-up))]
-     [:td.is-size-7.has-text-grey (format-date (:top-up/requested-at top-up))]
+     [:td.is-size-7.has-text-grey (util/format-date (:top-up/requested-at top-up))]
      [status-cell top-up users-map]]))
 
 (defn top-ups-page []
   (let [top-ups   (re-frame/subscribe [::top-up-subs/top-ups-sorted])
-        users-map (re-frame/subscribe [::user-subs/users-map])]
+        users-map (re-frame/subscribe [::user-subs/users-map])
+        date-from (r/atom (util/default-date-from))
+        date-to   (r/atom (util/default-date-to))]
     (fn []
       (let [top-ups   @top-ups
-            users-map @users-map]
+            users-map @users-map
+            df        @date-from
+            dt        @date-to
+            filtered  (->> top-ups
+                           (filter (fn [t]
+                                     (let [ms (.getTime (js/Date. (:top-up/requested-at t)))]
+                                       (and (or (nil? df)
+                                                (>= ms (.getTime (js/Date. df))))
+                                            (or (nil? dt)
+                                                (<= ms (+ (.getTime (js/Date. dt)) 86399999)))))))
+                           vec)]
         [:div
          [:nav.top-nav
           [:button.button.is-ghost
@@ -110,13 +119,32 @@
            [:span "Zurück"]]
           [:span.top-nav-name "Einzahlungen"]
           [:button.button.is-light.is-small
-           {:on-click #(export-pdf! top-ups users-map)
-            :disabled (not (some #(= :confirmed (:top-up/status %)) top-ups))}
+           {:on-click #(export-pdf! filtered users-map)
+            :disabled (not (some #(= :confirmed (:top-up/status %)) filtered))}
            [:span.icon.is-small [:i.fas.fa-file-export]]
            [:span "Exportieren"]]]
 
          [:div {:style {:padding "1.5rem"}}
-          (if (empty? top-ups)
+          [:div {:style {:margin-bottom "1rem" :display "flex" :flex-wrap "wrap" :gap "0.5rem" :align-items "center"}}
+           [:input.input.is-small
+            {:type      "date"
+             :style     {:width "auto"}
+             :value     (or df "")
+             :on-change #(reset! date-from (let [v (.. % -target -value)]
+                                             (when (seq v) v)))}]
+           [:input.input.is-small
+            {:type      "date"
+             :style     {:width "auto"}
+             :value     (or dt "")
+             :on-change #(reset! date-to (let [v (.. % -target -value)]
+                                           (when (seq v) v)))}]
+           (when (or (not= df (util/default-date-from))
+                     (not= dt (util/default-date-to)))
+             [:button.button.is-small.is-ghost
+              {:on-click #(do (reset! date-from (util/default-date-from))
+                              (reset! date-to (util/default-date-to)))}
+              "Zurücksetzen"])]
+          (if (empty? filtered)
             [:p.has-text-grey "Keine Einzahlungen vorhanden."]
             [:div {:style {:background    "var(--color-surface)"
                            :border        "1px solid var(--color-outline)"
@@ -132,6 +160,6 @@
                  [:th "Eingereicht"]
                  [:th "Status"]]]
                [:tbody
-                (for [top-up top-ups]
+                (for [top-up filtered]
                   ^{:key (:top-up/id top-up)}
                   [top-up-row top-up users-map])]]]])]]))))

@@ -39,12 +39,14 @@
 
    [:* {:box-sizing "border-box" :margin 0 :padding 0}]
 
+   [:html {:overscroll-behavior "none"}]
+
    [:body
     {:font-family        "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
      :background         "var(--color-background)"
      :color              "var(--color-on-surface)"
      :min-height         "100vh"
-     :overscroll-behavior-y "none"}]
+     :overscroll-behavior "none"}]
 
    [:.button.is-ghost
     ["&:hover" {:text-decoration "none"}]]

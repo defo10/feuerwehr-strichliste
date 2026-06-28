@@ -16,7 +16,8 @@
    [feuerwehr-strichliste.top-up.events :as top-up-events]
    [feuerwehr-strichliste.top-up.views :refer [admin-top-up-form]]
    [feuerwehr-strichliste.domain.permissions :as permissions]
-   [feuerwehr-strichliste.components.drawer :refer [drawer]]))
+   [feuerwehr-strichliste.components.drawer :refer [drawer]]
+   [feuerwehr-strichliste.util :as util]))
 
 (def ^:private role-order   {:member 0 :kitchen 1 :admin 2})
 (def ^:private status-order {:active 0 :inactive 1})
@@ -52,11 +53,6 @@
     (case status
       :active   [:span.tag.is-success label]
       :inactive [:span.tag label])))
-
-(defn- format-date [iso]
-  (.toLocaleString (js/Date. iso) "de-DE"
-                   #js {:day "2-digit" :month "2-digit" :year "2-digit"
-                        :hour "2-digit" :minute "2-digit"}))
 
 (defn- event-details [event items-map]
   (let [ref    (:checkout/reference event)
@@ -132,7 +128,7 @@
                        by-admin?  (not= (:history/actor event) (:user/id user))]
                    ^{:key (:history/id event)}
                    [:tr {:class (when cancelled? "has-text-grey")}
-                    [:td {:style {:white-space "nowrap"}} (format-date (:history/timestamp event))]
+                    [:td {:style {:white-space "nowrap"}} (util/format-date (:history/timestamp event))]
                     [:td {:style {:white-space "nowrap"}}
                      (case (:history/type event)
                        :checkout  "Einkauf"

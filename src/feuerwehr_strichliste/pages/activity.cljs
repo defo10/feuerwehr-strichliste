@@ -6,27 +6,8 @@
    [feuerwehr-strichliste.subs :as app-subs]
    [feuerwehr-strichliste.user.subs :as user-subs]
    [feuerwehr-strichliste.item.subs :as item-subs]
+   [feuerwehr-strichliste.util :as util]
    [feuerwehr-strichliste.item.views :refer [format-price]]))
-
-(defn- format-date [iso]
-  (.toLocaleString (js/Date. iso) "de-DE"
-                   #js {:day "2-digit" :month "2-digit" :year "2-digit"
-                        :hour "2-digit" :minute "2-digit"}))
-
-(defn- local-date-str
-  "Returns a YYYY-MM-DD string in local time for the given Date object."
-  [^js d]
-  (str (.getFullYear d) "-"
-       (-> (.getMonth d) inc (.toString) (.padStart 2 "0")) "-"
-       (-> (.getDate d) (.toString) (.padStart 2 "0"))))
-
-(defn- default-date-from []
-  (let [d (js/Date.)]
-    (.setFullYear d (- (.getFullYear d) 1))
-    (local-date-str d)))
-
-(defn- default-date-to []
-  (local-date-str (js/Date.)))
 
 (def ^:private event-type-options
   [[:cart/checked-out         "Einkauf"]
@@ -131,7 +112,7 @@
                      actor-name)
         nutzer     (if (seq ref) (str base-name " (" ref ")") base-name)]
     [:tr
-     [:td.is-size-7.has-text-grey (format-date (:event/timestamp event))]
+     [:td.is-size-7.has-text-grey (util/format-date (:event/timestamp event))]
      [:td (event-type-label (:event/type event))]
      [:td nutzer]
      [details-cell event users-map items-map log]]))
@@ -185,13 +166,13 @@
            :on-change #(reset! date-to (let [v (.. % -target -value)]
                                          (when (seq v) v)))}]
          (when (or (seq @type-filter) @user-filter
-                   (not= @date-from (default-date-from))
-                   (not= @date-to (default-date-to)))
+                   (not= @date-from (util/default-date-from))
+                   (not= @date-to (util/default-date-to)))
            [:button.button.is-small.is-ghost
             {:on-click #(do (reset! type-filter #{})
                             (reset! user-filter nil)
-                            (reset! date-from (default-date-from))
-                            (reset! date-to (default-date-to)))}
+                            (reset! date-from (util/default-date-from))
+                            (reset! date-to (util/default-date-to)))}
             "Zurücksetzen"])])})))
 
 (defn- log-table [events sort-state um im log]
@@ -222,8 +203,8 @@
         sort-state   (r/atom {:col :time :dir :desc})
         type-filter  (r/atom #{})
         user-filter  (r/atom nil)
-        date-from    (r/atom (default-date-from))
-        date-to      (r/atom (default-date-to))]
+        date-from    (r/atom (util/default-date-from))
+        date-to      (r/atom (util/default-date-to))]
     (r/create-class
      {:component-did-mount
       (fn [_] (re-frame/dispatch [::events/load-activity-log]))
