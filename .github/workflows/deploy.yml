@@ -27,6 +27,9 @@ jobs:
 
       - run: npm run release
 
+      - name: Stamp service worker cache version
+        run: sed -i "s/__CACHE_VERSION__/$(git rev-parse --short HEAD)/g" resources/public/sw.js
+
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
