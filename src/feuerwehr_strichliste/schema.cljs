@@ -158,6 +158,16 @@
    [:item/id         string?]
    [:item/stock      nat-int?]])
 
+(def ItemStockCorrectedEvent
+  [:map
+   [:event/id          string?]
+   [:event/timestamp   string?]
+   [:event/actor       string?]
+   [:event/type        [:= :item/stock-corrected]]
+   [:item/id           string?]
+   [:item/stock-before nat-int?]
+   [:item/stock        nat-int?]])
+
 (def ItemDeactivatedEvent
   [:map
    [:event/id        string?]
@@ -287,6 +297,7 @@
    [:item/created              ItemCreatedEvent]
    [:item/edited               ItemEditedEvent]
    [:item/restocked            ItemRestockedEvent]
+   [:item/stock-corrected      ItemStockCorrectedEvent]
    [:item/deactivated          ItemDeactivatedEvent]
    [:item/reactivated          ItemReactivatedEvent]
    [:cart/checked-out          CartCheckedOutEvent]
