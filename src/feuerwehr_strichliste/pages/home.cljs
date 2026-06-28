@@ -55,11 +55,12 @@
     (fn []
       (let [{:keys [user] :as pin} @pin-state
             toast        @rfid-toast
-            users        @all-users
+            all          @all-users
+            active       (filter #(= :active (:user/status %)) all)
             q            (str/lower-case (or @search-query ""))
             filtered     (if (str/blank? q)
-                           users
-                           (filter #(str/includes? (str/lower-case (:user/name %)) q) users))
+                           active
+                           (filter #(str/includes? (str/lower-case (:user/name %)) q) active))
             by-letter    (sort-by first (group-by #(first (:user/name %)) filtered))
             used-letters (set (map first by-letter))]
         [:div.page
@@ -77,5 +78,5 @@
          (when toast
            [:div.rfid-toast {:class (str "rfid-toast--" (name (:type toast)))}
             (:message toast)])
-         (when (empty? users)
+         (when (empty? all)
            [onboarding-modal])]))))

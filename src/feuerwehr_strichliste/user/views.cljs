@@ -9,7 +9,7 @@
   {:member "Mitglied" :kitchen "Küche" :admin "Admin" :guest "Gast"})
 
 (def status-labels
-  {:active "Aktiv" :inactive "Inaktiv" :suspended "Gesperrt"})
+  {:active "Aktiv" :inactive "Inaktiv"})
 
 (defn user-card [user]
   [:div.user-list-item

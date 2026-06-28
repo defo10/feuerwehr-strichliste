@@ -19,7 +19,7 @@
    [feuerwehr-strichliste.components.drawer :refer [drawer]]))
 
 (def ^:private role-order   {:member 0 :kitchen 1 :admin 2})
-(def ^:private status-order {:active 0 :inactive 1 :suspended 2})
+(def ^:private status-order {:active 0 :inactive 1})
 
 (defn- sort-value [col user all-balances]
   (case col
@@ -50,9 +50,8 @@
 (defn- status-tag [status]
   (let [label (status-labels status)]
     (case status
-      :active    [:span.tag.is-success label]
-      :inactive  [:span.tag label]
-      :suspended [:span.tag.is-danger label])))
+      :active   [:span.tag.is-success label]
+      :inactive [:span.tag label])))
 
 (defn- format-date [iso]
   (.toLocaleString (js/Date. iso) "de-DE"
@@ -213,12 +212,15 @@
         sort-state     (r/atom {:col :name :dir :asc})
         search-query   (r/atom "")
         expanded-users (r/atom #{})
-        drawer-state   (r/atom nil)]
+        drawer-state   (r/atom nil)
+        show-inactive? (r/atom false)]
     (fn []
       (let [q            (str/lower-case (or @search-query ""))
+            si?          @show-inactive?
+            base         (if si? @all-users (filter #(= :active (:user/status %)) @all-users))
             filtered     (if (str/blank? q)
-                           @all-users
-                           (filter #(str/includes? (str/lower-case (:user/name %)) q) @all-users))
+                           base
+                           (filter #(str/includes? (str/lower-case (:user/name %)) q) base))
             users        (apply-sort filtered @sort-state @all-balances)
             name-sort?   (= :name (:col @sort-state))
             used-letters (when name-sort?
@@ -232,6 +234,11 @@
             [:span "Zurück"]]
            [:span.top-nav-name "Nutzer"]
            [search-bar {:value @search-query :on-change #(reset! search-query %)}]
+           [:label {:style {:display "flex" :align-items "center" :gap "0.5rem" :white-space "nowrap" :font-size "0.875rem"}}
+            [:input {:type      "checkbox"
+                     :checked   si?
+                     :on-change #(swap! show-inactive? not)}]
+            "Inaktive zeigen"]
            (if @can-manage?
              [:button.button.is-primary.is-small
               {:on-click #(reset! add-open? true)}

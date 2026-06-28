@@ -68,7 +68,7 @@
    [:user/role      [:enum :member :kitchen :admin :guest]]
    [:user/pin-hash  [:string {:gen/gen (gen/return "$2b$10$fSviXQEHvZ/dHtwvKUREbOFZcc9Recla6YM4vFMmgbLb9hyNLpij.")}]]
    [:user/rfid-hash {:optional true} string?]
-   [:user/status    [:enum :active :inactive :suspended]]
+   [:user/status    [:enum :active :inactive]]
    [:user/history   {:gen/gen (gen/return [])} UserHistory]])
 
 (defn generate-users [n]
@@ -183,7 +183,7 @@
    [:user/id         string?]
    [:user/name       string?]
    [:user/role       [:enum :member :kitchen :admin :guest]]
-   [:user/status     [:enum :active :inactive :suspended]]
+   [:user/status     [:enum :active :inactive]]
    [:user/pin-hash   {:optional true} string?]
    [:user/rfid-hash  {:optional true} string?]])
 
