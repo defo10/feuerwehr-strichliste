@@ -112,6 +112,11 @@
                    :dispatch-after {:ms 3000 :dispatch [::clear-rfid-toast]}}))
 
               :overview-panel
-              {:db (assoc-in db [:ui :pending-rfid] rfid-string)}
+              (let [current-user-id (get-in db [:ui :current-user-id])
+                    current-hash    (get-in db [:snapshot :users current-user-id :user/rfid-hash])
+                    already-linked? (and current-hash (bcrypt/compareSync rfid-string current-hash))]
+                (if already-linked?
+                  {:db db}
+                  {:db (assoc-in db [:ui :pending-rfid] rfid-string)}))
 
               {:db db})))
