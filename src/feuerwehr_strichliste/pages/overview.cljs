@@ -83,7 +83,7 @@
                   [:span.icon.is-small [:i.fas.fa-times]]]])])]
           [:div.session-pane-footer
            [:button.button.is-primary.is-fullwidth
-            {:on-click #(if guest?
+            {:on-click #(if (and guest? (or (seq cart-entries) pending-top-up))
                           (reset! show-ref-dialog? true)
                           (finish! {}))}
             "Fertig"]]]
