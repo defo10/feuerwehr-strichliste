@@ -27,8 +27,9 @@
   (cond (pos? cents) "positive" (neg? cents) "negative" :else "zero"))
 
 (defn- session-pane [_balance _cart-entries _pending-top-up _top-up-editing? _user]
-  (let [show-ref-dialog? (r/atom false)
-        ref-input        (r/atom "")]
+  (let [show-ref-dialog?  (r/atom false)
+        ref-input         (r/atom "")
+        show-disclaimer?  (r/atom false)]
     (fn [balance cart-entries pending-top-up top-up-editing? user]
       (let [cart-sum  (reduce (fn [s {:keys [item quantity]}] (+ s (* quantity (:item/price item)))) 0 cart-entries)
             tu-sum    (or (:amount pending-top-up) 0)
@@ -46,7 +47,8 @@
              [:<>
               [top-up-form {:current-user   user
                             :initial-amount (:amount pending-top-up)
-                            :on-close       #(re-frame/dispatch [::top-up-events/close-top-up-form])}]
+                            :on-close       #(re-frame/dispatch [::top-up-events/close-top-up-form])
+                            :on-staged      #(reset! show-disclaimer? true)}]
               [:p.top-up-info
                "Bitte den Betrag zeitnah auf folgendes Konto überweisen:" [:br]
                "DExxx xxxx xxxx xxxx xxxx" [:br]
@@ -98,7 +100,18 @@
               {:on-click #(do (finish! {:reference (when (seq @ref-input) @ref-input)})
                               (reset! show-ref-dialog? false)
                               (reset! ref-input ""))}
-              "Fertig"]]])]))))
+              "Fertig"]]])
+         (when @show-disclaimer?
+           [modal {:on-close #(reset! show-disclaimer? false)}
+            [:p.confirm-message
+             "Bitte den Betrag zeitnah auf folgendes Konto überweisen:" [:br]
+             "DExxx xxxx xxxx xxxx xxxx" [:br]
+             "oder per paypal an:" [:br]
+             "sandro@test.com"]
+            [:div.confirm-actions
+             [:button.button.is-primary
+              {:on-click #(reset! show-disclaimer? false)}
+              "Verstanden"]]])]))))
 
 (defn overview-page []
   (let [current-user    (re-frame/subscribe [::app-subs/current-user])

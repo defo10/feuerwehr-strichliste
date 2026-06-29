@@ -47,9 +47,9 @@
             :on-click on-close}
            "Abbrechen"]]]))))
 
-(defn top-up-form [{:keys [current-user on-close initial-amount]}]
+(defn top-up-form [{:keys [current-user on-close on-staged initial-amount]}]
   (let [form (r/atom {:user-id (:user/id current-user) :amount (or initial-amount 0)})]
-    (fn [{:keys [on-close]}]
+    (fn [{:keys [on-close on-staged]}]
       (let [f @form]
         [:form.drawer-form {:on-submit #(.preventDefault %)}
 
@@ -84,7 +84,8 @@
                         (re-frame/dispatch [::events/stage-top-up
                                             {:user-id (:user-id f)
                                              :amount  (:amount f)}])
-                        (on-close))}
+                        (on-close)
+                        (when on-staged (on-staged)))}
            "Einzahlung vormerken"]
           [:button.button.is-light.is-fullwidth
            {:type     "button"
